@@ -64,3 +64,6 @@ CMYK converter now independently checks the embedded OutputIntent stream byte-fo
 
 ## Production reliability (0.9.4)
 Duplex long/short edge and portrait/landscape sheet options, actual sheet capacity and raster limits before exporting; sheet marks honour the user setting. PDF box nesting validated. Browser compression fallback uses standards-compliant uncompressed zlib blocks. ZIP contains optional offline conversion tools, dependency pin and instructions; CI asserts source parity. Local image resolution cap 2400 px with explicit canvas release. PDF/X remains a candidate requiring external validation.
+
+## Editorial security (0.9.5)
+Every privileged DB call now requires live private editor membership, current Auth app_metadata, non-anonymous/non-banned user, matching JWT role and AAL2. Existing expressly authorized accounts are migrated. Revocation is immediate even with a stale token. MFA enrollment checks membership before creating factors. Curator supports idempotent metadata registration and review/reject with private audit, never file delivery. Operator setup: docs/editorial-access.md. SQL fixtures use transaction-local Auth rows and roll back.

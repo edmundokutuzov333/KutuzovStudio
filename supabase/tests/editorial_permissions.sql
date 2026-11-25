@@ -1,4 +1,7 @@
 begin;
+-- Transaction-local fixture only; no real account or password is created.
+insert into auth.users(id,raw_app_meta_data) values('00000000-0000-4000-8000-000000000099','{"studio_role":"editor"}');
+insert into studio_private.editor_members(user_id) values('00000000-0000-4000-8000-000000000099');
 set local role anon;
 do $$ begin
  if (select count(*) from public.studio_releases)<>1 then raise exception 'public count';end if;

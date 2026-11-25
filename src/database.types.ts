@@ -128,6 +128,17 @@ export type Database = {
         Args: { draft_manifest: Json; draft_title: string }
         Returns: string
       }
+      studio_curate_asset: {
+        Args: {
+          asset_author: string
+          asset_credits: number
+          asset_id: string
+          asset_title: string
+          asset_url: string
+        }
+        Returns: string
+      }
+      studio_editor_status: { Args: never; Returns: Json }
       studio_publish_release: {
         Args: { expected_current: string; target: string }
         Returns: string
