@@ -30,3 +30,5 @@ export async function setting(id,value){if(arguments.length===1)return (await tx
 export function brandFrom(s){const v=validateSnapshot(s),f=v.fields;return {company:f.company,website:f.website,address:f.address,slogan:f.slogan,color:f.color,customColor:f.customColor,family:f.family,logo:v.assets.logo}}
 export function portable(title,snapshot){return JSON.stringify({kind:'kutuzov-studio-project',title:String(title).slice(0,100),snapshot:validateSnapshot(snapshot)})}
 export function parsePortable(text){if(typeof text!=='string'||text.length>42000000)throw Error('Ficheiro demasiado grande.');const p=JSON.parse(text);if(p.kind!=='kutuzov-studio-project'||typeof p.title!=='string'||!p.title.trim()||p.title.length>100)throw Error('Ficheiro .kutuzov inválido.');return {title:p.title,snapshot:validateSnapshot(p.snapshot)}}
+
+export async function verifySnapshotImages(snapshot){const s=validateSnapshot(snapshot);for(const a of Object.values(s.assets)){if(!a)continue;const image=new Image();image.src=a.data;await image.decode();if(image.naturalWidth!==a.width||image.naturalHeight!==a.height)throw Error('Dimensões da imagem não correspondem ao projecto.')}return s}

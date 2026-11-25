@@ -34,5 +34,7 @@ Explicit IndexedDB project saves, portable validated version-1 .kutuzov, local b
 ## Editorial (0.7)
 Versioned immutable manifest releases instead of disconnected tables: product IDs, 60 renderer-backed template IDs, curated collections, palettes, system font inventory and procedural asset licensing. Published read-only public catalog, draft insertion restricted to authenticated editor AAL2; atomic publish with advisory lock, expected-current check, idempotent retry and private audit trigger. Admin at admin.html uses password and existing verified TOTP factor; access token stays in memory. Before using it, an authorized operator must provision a dedicated Supabase Auth account, set app_metadata.studio_role='editor' via trusted admin tooling, and enroll/verify TOTP through a trusted setup flow. No admin user or password created automatically. Admin auth UI not E2E verified with a real account. Assets remain local; no external downloads. Private audit table deliberately has RLS without visitor policies. Editorial schema has no visitor/project records.
 
-## Hardening (0.7.1)
+## Hardening (0.7.2)
 Code 39 barcode on badge reverse, batch clears individual fields rather than inheriting another person's identity, cancellation/print exclusivity, saved project and badge browser regressions, and editor logout race guards. Workspace keeps compatible v1 imports without barcode. Batch cap 50 and 110 MB payload. No administrative login was exercised with a real user.
+
+Batch orchestration has injectable test adapters for cancellation, per-person data isolation and photo matching; imported image files are decoded and their real dimensions checked before restoring into the editor.
