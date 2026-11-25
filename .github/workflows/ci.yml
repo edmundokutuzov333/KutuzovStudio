@@ -16,12 +16,13 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y ghostscript poppler-utils inkscape
       - name: Install vector PDF dependency
         run: python3 -m venv /tmp/studio-venv && /tmp/studio-venv/bin/pip install pypdf==5.9.0
-      - name: Browser smoke
+      - name: Browser smoke (real-time Playwright)
         run: |
+          /tmp/studio-venv/bin/pip install playwright==1.51.0
+          /tmp/studio-venv/bin/python -m playwright install chromium
           python3 -m http.server 8000 > /tmp/studio-http.log 2>&1 &
           for i in {1..20}; do curl -fsS http://localhost:8000/ >/dev/null && break; sleep 1; done
-          google-chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=30000 --dump-dom http://localhost:8000/tests/browser.html > /tmp/studio-browser.html
-          grep -q 'STUDIO_BROWSER_PASS' /tmp/studio-browser.html
+          /tmp/studio-venv/bin/python tests/browser_smoke.py
       - name: Vector PDF proof
         run: |
           node tests/vector-proof.mjs /tmp/studio-vector.html

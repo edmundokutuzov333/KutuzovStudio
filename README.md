@@ -73,3 +73,6 @@ Deployed metadata-only Edge Function, current-editor and AAL2 checks, origin all
 
 ## Asset provenance (0.9.7)
 Explicit per-image rights declaration: editable distribution rights or flattened-only rights. Older uploaded-background snapshots default to flattened-only. SVG, native vector print, production ZIP and portable project export are blocked for flattened-only backgrounds; RGB PDF/PNG/JPG and local saved projects remain available. User declarations are not legal verification. Internal SVG for rendering is not a security boundary. No stock downloads.
+
+## Experience stabilization (0.9.8)
+Product cards and semantic stage navigation, explicit selected-design focus, stable pending previews with disabled stale actions, searchable original background gallery, responsive touch controls and status announcements. Admin concurrent actions lock controls, expired authenticated sessions clear local state. Browser tests use real-time Playwright rather than virtual-time dump-dom (which caused intermittent failure).
