@@ -3,3 +3,5 @@
 .print-panel{display:grid;gap:12px;border-top:1px solid #ddd;padding-top:20px}button:disabled{opacity:.55;cursor:wait}#print-status{font-size:.85rem;color:#4a4a4a}
 
 .download-link{display:block;color:#244a77;font-weight:700;padding:10px 0;text-decoration:underline}
+
+#native-print{display:none}@media print{body.native-print-active>header,body.native-print-active>main,body.native-print-active>footer{display:none!important}body.native-print-active{margin:0!important;padding:0!important;background:white!important}body.native-print-active #native-print{display:block;print-color-adjust:exact;-webkit-print-color-adjust:exact}.native-page{break-after:page;margin:0;padding:0;line-height:0}.native-page:last-child{break-after:auto}.native-page svg{display:block;max-width:none;max-height:none}}

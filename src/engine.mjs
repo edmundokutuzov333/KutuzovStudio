@@ -1,6 +1,6 @@
 import {qrSvg,qrMatrix} from './qr.mjs';
 import {proposals,templates} from './templates.mjs';
-export function validFormat(f){return !!f && typeof f.id==="string" && /^[a-z0-9-]{1,40}$/.test(f.id)&&["card","badge"].includes(f.product)&&typeof f.label==="string"&&f.label.length>0&&f.label.length<=100&&["width_mm","height_mm","bleed_mm","safe_mm","position"].every(k=>typeof f[k]==="number"&&Number.isFinite(f[k]))&&f.width_mm>=25&&f.width_mm<=200&&f.height_mm>=25&&f.height_mm<=200&&f.bleed_mm>=0&&f.bleed_mm<=5&&f.safe_mm>=2&&f.safe_mm<=8&&Math.min(f.width_mm,f.height_mm)>2*f.safe_mm&&Number.isInteger(f.position)&&f.position>=0}
+export function validFormat(f){return !!f && typeof f.id==="string" && /^[a-z0-9-]{1,40}$/.test(f.id)&&["card","badge"].includes(f.product)&&typeof f.label==="string"&&f.label.length>0&&f.label.length<=100&&["width_mm","height_mm","bleed_mm","safe_mm","position"].every(k=>typeof f[k]==="number"&&Number.isFinite(f[k]))&&f.width_mm>=25&&f.width_mm<=200&&f.height_mm>=25&&f.height_mm<=200&&f.bleed_mm>=0&&f.bleed_mm<=5&&f.safe_mm>=2&&f.safe_mm<=8&&Math.min(f.width_mm,f.height_mm)>2*f.safe_mm&&Number.isInteger(f.position)&&f.position>=0&&f.position<=2147483647}
 
 export function geometry(f,vertical=false){if(!validFormat(f))throw Error("Formato inválido");const w=vertical?Math.min(f.width_mm,f.height_mm):f.width_mm;const h=vertical?Math.max(f.width_mm,f.height_mm):f.height_mm;const b=f.bleed_mm;return {w,h,b,s:f.safe_mm,width:w+2*b,height:h+2*b}}
 
@@ -9,7 +9,7 @@ export function escapeXml(v){return String(v).replace(/[\u0000-\u0008\u000b\u000
 
 export function normalizeProfile(p){
  const limits={name:80,role:80,company:80,phone:40,email:120,website:100,address:140,slogan:100,qr:106};
- const out={};for(const [k,n] of Object.entries(limits)){const raw=String(p[k]??'').trim();const v=k==='qr'?raw:raw.replace(/\s+/g,' ');if(v.length>n)throw Error('Campo demasiado longo: '+k);out[k]=v}
+ const out={};for(const [k,n] of Object.entries(limits)){const raw=String(p[k]??'').trim();if(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffe\uffff]/.test(raw))throw Error('Caracteres inválidos: '+k);const v=k==='qr'?raw:raw.replace(/\s+/g,' ');if(v.length>n)throw Error('Campo demasiado longo: '+k);out[k]=v}
  if(!out.name)throw Error('Indica o teu nome.');if(out.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(out.email))throw Error('Email inválido.');
  if(out.qr)qrMatrix(out.qr);
  out.color=/^#[0-9a-f]{6}$/i.test(p.color||'')?p.color.toLowerCase():null;
@@ -19,7 +19,8 @@ export function contrastColor(hex){const a=hex.slice(1).match(/../g).map(x=>pars
 
 
 export function customFormat(product,width,height,bleed=3,safe=3){
- const f={id:'custom',product,label:'Personalizado',width_mm:Number(width),height_mm:Number(height),bleed_mm:Number(bleed),safe_mm:Number(safe),position:999};
+ const numeric=v=>{if(v===null||v===undefined||String(v).trim()==='')throw Error('Preenche todas as dimensões.');const n=Number(v);if(!Number.isFinite(n)||Math.abs(n*100-Math.round(n*100))>1e-7)throw Error('Usa até duas casas decimais.');return n};
+ const f={id:'custom',product,label:'Personalizado',width_mm:numeric(width),height_mm:numeric(height),bleed_mm:numeric(bleed),safe_mm:numeric(safe),position:999};
  if(!validFormat(f))throw Error('Dimensões: 25–200 mm; sangria 0–5 mm; margem 2–8 mm.');return f;
 }
 export function oriented(format,orientation='native'){
@@ -35,12 +36,12 @@ export function fitBlock(fields,box,font,measure=defaultMeasure){
  const layout=scale=>{let height=0;const groups=present.map(f=>{const size=f.size*scale,lines=wrap(f.value,w,size,font,f.weight,measure);const lineHeight=size*1.32;const gap=f.gap*scale;height+=lines.length*lineHeight+gap;return {...f,size,lines,lineHeight,gap}});return {groups,height:height-(groups.at(-1)?.gap||0)}};
  let lo=0,hi=1;for(let i=0;i<22;i++){const mid=(lo+hi)/2;const l=layout(mid);if(l.height<=h&&l.groups.every(f=>f.lines.every(t=>measure(t,f.size,font,f.weight)<=w+.000001)))lo=mid;else hi=mid}
  const {groups,height}=layout(lo);let top=y+(box.center?(h-height)/2:0);const nodes=[],warnings=[];
- for(const f of groups){if(f.size<2)warnings.push('Texto pequeno: '+f.key+' ('+(f.size*72/25.4).toFixed(1)+' pt).');for(const value of f.lines){nodes.push({kind:'text',value,x:align==='middle'?x+w/2:x,y:top+f.size,size:f.size,font,weight:f.weight,align,fill:f.fill,max:w});top+=f.lineHeight}top+=f.gap}
+ for(const f of groups){if(f.size<2.12)warnings.push('Texto pequeno: '+f.key+' ('+(f.size*72/25.4).toFixed(1)+' pt).');for(const value of f.lines){nodes.push({kind:'text',value,x:align==='middle'?x+w/2:x,y:top+f.size,size:f.size,font,weight:f.weight,align,fill:f.fill,max:w});top+=f.lineHeight}top+=f.gap}
  return {nodes,warnings};
 }
 function rect(x,y,w,h,fill){return {kind:'rect',x,y,w,h,fill}}
 function assetValid(a){return !a||(typeof a.data==='string'&&a.data.length<=20000000&&/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(a.data)&&Number.isInteger(a.width)&&Number.isInteger(a.height)&&a.width>0&&a.height>0&&a.width<=2400&&a.height<=2400)}
-function decorations(pattern,w,h,b,accent){const a=[];const p=(d)=>({kind:'path',d,fill:accent});if(pattern==='line')a.push(rect(-b,-b,w+2*b,Math.max(1,h*.035)+b,accent));if(pattern==='frame')a.push({kind:'frame',x:1,y:1,w:w-2,h:h-2,fill:accent});if(pattern==='band')a.push(rect(-b,-b,w+2*b,1+b,accent));if(pattern==='blocks')a.push(rect(w*.8,-b,w*.2+b,1.8+b,accent),rect(-b,h-1.8,w*.2+b,1.8+b,accent));if(pattern==='grid')for(let i=0;i<5;i++)a.push(rect(w*(.78+i*.04),-b,.5,2+b,accent));if(pattern==='circles')a.push({kind:'circle',x:w,y:0,r:Math.min(w,h)*.26,fill:accent});if(pattern==='diagonal')a.push(p('M'+w*.78+' '+(-b)+'H'+(w+b)+'V'+(h*.08)+'Z'));return a}
+function decorations(pattern,w,h,b,accent,s){const a=[];const p=(d)=>({kind:'path',d,fill:accent});if(pattern==='line')a.push(rect(-b,-b,w+2*b,Math.min(s*.6,Math.max(.5,h*.035))+b,accent));if(pattern==='frame')a.push({kind:'frame',x:1,y:1,w:w-2,h:h-2,fill:accent});if(pattern==='band')a.push(rect(-b,-b,w+2*b,1+b,accent));if(pattern==='blocks')a.push(rect(w*.8,-b,w*.2+b,1.8+b,accent),rect(-b,h-1.8,w*.2+b,1.8+b,accent));if(pattern==='grid')for(let i=0;i<5;i++)a.push(rect(w*(.78+i*.04),-b,.5,2+b,accent));if(pattern==='circles')a.push({kind:'circle',x:w,y:0,r:Math.min(s*.8,Math.min(w,h)*.26),fill:accent});if(pattern==='diagonal')a.push(p('M'+w*.78+' '+(-b)+'H'+(w+b)+'V'+Math.min(h*.08,s*.7)+'Z'));return a}
 export function composeDocument({format,profile,template,orientation='native',photo=null,logo=null,focusX=.5,focusY=.5,variation=0,textScale=1,textAlign='auto',photoMode='cover',showPhoto=true,showLogo=true,measure=defaultMeasure}){
  const p=normalizeProfile(profile);if(!templates.includes(template))throw Error('Template inválido.');if(!assetValid(photo)||!assetValid(logo))throw Error('Imagem inválida.');
  if(!Number.isFinite(textScale)||textScale<.75||textScale>1.25||!['auto','start','middle'].includes(textAlign))throw Error('Tipografia inválida.');
@@ -49,7 +50,7 @@ export function composeDocument({format,profile,template,orientation='native',ph
  const g=geometry(oriented(format,orientation)),{w,h,b,s}=g,f=template.family,accent=p.color||f.accent,bg=template.layout==='center'&&p.color?accent:f.bg,fg=template.layout==='center'&&p.color?contrastColor(bg):f.fg;
  const warnings=[],sides={};const image=(a,x,y,iw,ih,mode)=>{const scale=mode==='cover'?Math.max(iw/a.width,ih/a.height):Math.min(iw/a.width,ih/a.height),dpi=25.4/scale;if(dpi<300)warnings.push('Imagem: resolução efectiva '+Math.floor(dpi)+' DPI.');return {kind:'image',asset:a,x,y,w:iw,h:ih,mode,focusX:Math.max(0,Math.min(1,Number(focusX)||0)),focusY:Math.max(0,Math.min(1,Number(focusY)||0))}};
  for(const side of ['front','back']){
-  const nodes=[rect(-b,-b,w+2*b,h+2*b,bg),...decorations(variation===0?f.pattern:['line','frame','grid','diagonal'][variation-1],w,h,b,accent)];
+  const nodes=[rect(-b,-b,w+2*b,h+2*b,bg),...decorations(variation===0?f.pattern:['line','frame','grid','diagonal'][variation-1],w,h,b,accent,s)];
   const inner={x:s,y:s,w:w-2*s,h:h-2*s};let area={...inner};const isFront=side==='front';const portrait=isFront&&showPhoto&&photo;
   if(template.layout==='rail'){const bw=Math.min(3,inner.w*.08);nodes.push(rect(-b,-b,bw+b,h+2*b,accent));area.x+=bw;area.w-=bw}
   if(portrait){
@@ -57,7 +58,7 @@ export function composeDocument({format,profile,template,orientation='native',ph
    else{const ph=area.h*.32,pw=Math.min(area.w*.58,ph);nodes.push(image(photo,area.x+(area.w-pw)/2,area.y,pw,ph,photoMode));area.y+=ph+1;area.h-=ph+1}
   }
   if(isFront&&showLogo&&logo){const lh=Math.min(area.h*.18,8),lw=Math.min(area.w*.45,lh*2);nodes.push({...image(logo,area.x,area.y,lw,lh,'contain'),focusX:.5,focusY:.5});area.y+=lh+1;area.h-=lh+1;}
-  if(!isFront&&p.qr){const qs=Math.min(area.w*.44,area.h*.66,26);if(qs/45<.35)warnings.push('QR pequeno: confirma leitura após impressão.');if(w>=h){nodes.push({kind:'qr',value:p.qr,x:area.x+area.w-qs,y:area.y+(area.h-qs)/2,size:qs});area.w-=qs+1.5}else{nodes.push({kind:'qr',value:p.qr,x:area.x+(area.w-qs)/2,y:area.y+area.h-qs,size:qs});area.h-=qs+1.5}}
+  if(!isFront&&p.qr){const qs=Math.min(area.w*.44,area.h*.66,26);if(qs/45<.40)warnings.push('QR pequeno: confirma leitura após impressão.');if(w>=h){nodes.push({kind:'qr',value:p.qr,x:area.x+area.w-qs,y:area.y+(area.h-qs)/2,size:qs});area.w-=qs+1.5}else{nodes.push({kind:'qr',value:p.qr,x:area.x+(area.w-qs)/2,y:area.y+area.h-qs,size:qs});area.h-=qs+1.5}}
   const unit=Math.min(w,h),field=(key,value,factor,weight=400)=>({key,value,size:Math.min(10,unit*factor*textScale),weight,gap:Math.max(.35,unit*.012),fill:fg});
   let fields=isFront?[field('company',p.company,.052,600),field('name',p.name,.12,700),field('role',p.role,.064),field('phone',p.phone,.049),field('email',p.email,.049)]:[field('company',p.company||p.name,.105,700),field('slogan',p.slogan,.059),field('website',p.website,.052),field('address',p.address,.049),field('phone',p.phone,.049),field('email',p.email,.049)];
   if(template.layout==='editorial'&&isFront)fields=[fields[1],fields[2],fields[0],...fields.slice(3)];

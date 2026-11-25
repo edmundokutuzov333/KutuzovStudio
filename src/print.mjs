@@ -5,7 +5,7 @@ export function rasterDimensions(g,dpi,includeBleed=true){
  if(![300,600].includes(dpi))throw Error('Escolhe 300 ou 600 DPI.');
  const b=includeBleed?g.b:0,w=g.w+2*b,h=g.h+2*b;
  if(!Number.isFinite(w)||!Number.isFinite(h)||w<=0||h<=0||w>210||h>210)throw Error('Dimensão inválida.');
- const width=Math.round(w*dpi/25.4),height=Math.round(h*dpi/25.4);
+ printGeometry(g);const width=Math.round(w*dpi/25.4),height=Math.round(h*dpi/25.4);
  if(width*height>MAX_PIXELS)throw Error('Formato demasiado grande para esta resolução. Selecciona 300 DPI.');
  return {width,height};
 }
@@ -44,6 +44,7 @@ export function encodePdf(pages){
  const ids=[];
  for(const page of pages){
   const {image,media,trim,bleed,placements,marks,g}=page;
+  if(!Array.isArray(media)||media.length!==4||!media.every(Number.isFinite)||media[0]!==0||media[1]!==0||media[2]<=0||media[3]<=0||!Array.isArray(placements)||!placements.length||placements.length>100||placements.some(p=>![p.x,p.y,p.w,p.h].every(Number.isFinite)||p.x<-.00001||p.y<-.00001||p.w<=0||p.h<=0||p.x+p.w>media[2]+.00001||p.y+p.h>media[3]+.00001))throw Error('Página PDF inválida.');
   if(!(image.bytes instanceof Uint8Array)||!image.bytes.length||!Number.isInteger(image.width)||!Number.isInteger(image.height)||image.width<1||image.height<1||image.width*image.height>MAX_PIXELS)throw Error('Imagem PDF inválida.');
   const img=add(stream('/Type /XObject /Subtype /Image /Width '+image.width+' /Height '+image.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode',image.bytes));
   let commands='';for(const p of placements){commands+='q '+n(p.w)+' 0 0 '+n(p.h)+' '+n(p.x)+' '+n(p.y)+' cm /Im0 Do Q\n';if(marks)commands+=cutMarks(p,g)}
