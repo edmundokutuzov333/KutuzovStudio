@@ -43,3 +43,6 @@ Editorial releases reject unrecognized manifest keys both in PostgreSQL and in t
 
 ## Production handoff (0.7.3)
 `tools/pdfx.py` performs local Ghostscript CMYK PDF/X-3 candidate conversion with a user-supplied printer ICC, verifies physical boxes and page count, embedded fonts and renderability via Poppler/Ghostscript. No profile bundled. Independent PDF/X validation and physical proof remain mandatory. ZIP now includes PRINT-SPEC.json with geometry and DPI-specific warnings. CI YAML rebuilt to remove duplicated/truncated jobs.
+
+## Asset ecosystem (0.8)
+12 original vector background patterns, persisted in portable projects, metadata published in Studio Essentials 2.0. Magnific connector search verified; three actual candidates stored as private metadata with quoted costs, no files or external previews, no downloads. A normal stock license does not authorize redistributing editable content to arbitrary visitors. Provider API delivery is intentionally not enabled until a zero-cost and redistribution-authorized agreement exists. No API secret is in the repository. Candidates are accessible only with editor AAL2; original assets remain local.

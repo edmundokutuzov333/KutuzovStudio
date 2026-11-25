@@ -189,15 +189,75 @@ export const defaultManifest = {
   "assets": [
     {
       "id": "geometric",
-      "label": "Geometria procedural",
-      "license": "original",
-      "kind": "procedural"
+      "label": "Geometric",
+      "kind": "procedural",
+      "license": "original"
     },
     {
       "id": "lines",
-      "label": "Linhas e grelhas",
-      "license": "original",
-      "kind": "procedural"
+      "label": "Fine Lines",
+      "kind": "procedural",
+      "license": "original"
+    },
+    {
+      "id": "orbit",
+      "label": "Orbit",
+      "kind": "procedural",
+      "license": "original"
+    },
+    {
+      "id": "grid",
+      "label": "Grid",
+      "kind": "procedural",
+      "license": "original"
+    },
+    {
+      "id": "paper",
+      "label": "Paper Fold",
+      "kind": "procedural",
+      "license": "original"
+    },
+    {
+      "id": "diagonal",
+      "label": "Diagonal",
+      "kind": "procedural",
+      "license": "original"
+    },
+    {
+      "id": "waves",
+      "label": "Wave",
+      "kind": "procedural",
+      "license": "original"
+    },
+    {
+      "id": "dots",
+      "label": "Dot Matrix",
+      "kind": "procedural",
+      "license": "original"
+    },
+    {
+      "id": "steps",
+      "label": "Steps",
+      "kind": "procedural",
+      "license": "original"
+    },
+    {
+      "id": "rings",
+      "label": "Rings",
+      "kind": "procedural",
+      "license": "original"
+    },
+    {
+      "id": "stripes",
+      "label": "Stripes",
+      "kind": "procedural",
+      "license": "original"
+    },
+    {
+      "id": "arch",
+      "label": "Arch",
+      "kind": "procedural",
+      "license": "original"
     }
   ]
 };

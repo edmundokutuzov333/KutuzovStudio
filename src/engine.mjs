@@ -1,3 +1,4 @@
+import {backgroundNodes} from './backgrounds.mjs';
 import {badgeFields,code39Bars,code39Svg} from './badge.mjs';
 import {qrSvg,qrMatrix} from './qr.mjs';
 import {proposals,templates} from './templates.mjs';
@@ -51,7 +52,7 @@ export function composeDocument({format,profile,template,orientation='native',ph
  const g=geometry(oriented(format,orientation)),{w,h,b,s}=g,f=template.family,accent=p.color||f.accent,bg=template.layout==='center'&&p.color?accent:f.bg,fg=template.layout==='center'&&p.color?contrastColor(bg):f.fg;
  const warnings=[],sides={};const image=(a,x,y,iw,ih,mode)=>{const scale=mode==='cover'?Math.max(iw/a.width,ih/a.height):Math.min(iw/a.width,ih/a.height),dpi=25.4/scale;if(dpi<300)warnings.push('Imagem: resolução efectiva '+Math.floor(dpi)+' DPI.');return {kind:'image',asset:a,x,y,w:iw,h:ih,mode,focusX:Math.max(0,Math.min(1,Number(focusX)||0)),focusY:Math.max(0,Math.min(1,Number(focusY)||0))}};
  for(const side of ['front','back']){
-  const nodes=[rect(-b,-b,w+2*b,h+2*b,bg),...decorations(variation===0?f.pattern:['line','frame','grid','diagonal'][variation-1],w,h,b,accent,s)];
+  const nodes=[rect(-b,-b,w+2*b,h+2*b,bg),...backgroundNodes(profile.background||'none',g,bg,fg),...decorations(variation===0?f.pattern:['line','frame','grid','diagonal'][variation-1],w,h,b,accent,s)];
   const inner={x:s,y:s,w:w-2*s,h:h-2*s};let area={...inner};const isFront=side==='front';const portrait=isFront&&showPhoto&&photo;
   if(template.layout==='rail'){const bw=Math.min(3,inner.w*.08);nodes.push(rect(-b,-b,bw+b,h+2*b,accent));area.x+=bw;area.w-=bw}
   if(portrait){

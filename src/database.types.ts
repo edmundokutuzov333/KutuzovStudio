@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      studio_asset_candidates: {
+        Row: {
+          author: string
+          discovered_at: string
+          external_id: string
+          provider: string
+          quoted_credits: number
+          source_url: string
+          status: string
+          title: string
+        }
+        Insert: {
+          author: string
+          discovered_at?: string
+          external_id: string
+          provider: string
+          quoted_credits: number
+          source_url: string
+          status?: string
+          title: string
+        }
+        Update: {
+          author?: string
+          discovered_at?: string
+          external_id?: string
+          provider?: string
+          quoted_credits?: number
+          source_url?: string
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       studio_formats: {
         Row: {
           bleed_mm: number

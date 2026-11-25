@@ -1,13 +1,13 @@
 import {normalizeProfile,validFormat,composeDocument} from './engine.mjs';
 import {badgeFields} from './badge.mjs';
 import {templates,proposals} from './templates.mjs';
-const keys=['product','format','width','height','bleed','orientation','name','role','company','phone','email','website','address','slogan','qr','badgeKind','department','badgeId','expiry','barcode','industry','family','color','photoMode','focusX','focusY','textScale','textAlign'];
+const keys=['product','format','width','height','bleed','orientation','name','role','company','phone','email','website','address','slogan','qr','badgeKind','department','badgeId','expiry','barcode','background','industry','family','color','photoMode','focusX','focusY','textScale','textAlign'];
 const flags=['customColor','showPhoto','showLogo'];
 export const workspaceFields=Object.freeze([...keys,...flags]);
 const copy=v=>JSON.parse(JSON.stringify(v));
 export function validateSnapshot(input){
  if(!input||input.version!==1||!input.fields||!validFormat(input.format))throw Error('Projecto inválido ou versão incompatível.');
- const f={};for(const k of keys){const value=input.fields[k]??(k==='barcode'?'':undefined);if(typeof value!=='string'||value.length>200)throw Error('Campo inválido: '+k);f[k]=value}for(const k of flags){if(typeof input.fields[k]!=='boolean')throw Error('Campo inválido: '+k);f[k]=input.fields[k]}
+ const f={};for(const k of keys){const value=input.fields[k]??(k==='barcode'?'':k==='background'?'none':undefined);if(typeof value!=='string'||value.length>200)throw Error('Campo inválido: '+k);f[k]=value}for(const k of flags){if(typeof input.fields[k]!=='boolean')throw Error('Campo inválido: '+k);f[k]=input.fields[k]}
  if(f.product!==input.format.product||f.format!==input.format.id||!['native','horizontal','vertical'].includes(f.orientation)||!['cover','contain'].includes(f.photoMode)||!['auto','start','middle'].includes(f.textAlign)||!['general','business','creative','technology','hospitality','health'].includes(f.industry)||!/^#[0-9a-f]{6}$/i.test(f.color))throw Error('Configuração inválida.');
  for(const [k,min,max] of [['focusX',0,100],['focusY',0,100],['textScale',75,125]])if(!/^\d+$/.test(f[k])||Number(f[k])<min||Number(f[k])>max)throw Error('Controlo inválido.');
  if(!Number.isInteger(input.seed)||input.seed<0||input.seed>4||!proposals({family:f.family,industry:f.industry,seed:input.seed}).some(t=>t.id===input.templateId))throw Error('Proposta inválida.');

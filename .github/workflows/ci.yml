@@ -65,6 +65,7 @@ jobs:
           for migration in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -f "$migration"; done
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_permissions.sql
       - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/editorial_permissions.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/asset_permissions.sql
       - name: Catalog parity
         run: |
           psql -At -v ON_ERROR_STOP=1 -c 'select json_agg(t) from (select id,product,label,width_mm,height_mm,bleed_mm,safe_mm,position from public.studio_formats where published) t' > /tmp/catalog.json
