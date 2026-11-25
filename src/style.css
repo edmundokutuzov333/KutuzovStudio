@@ -11,3 +11,5 @@
 .workspace-tools{background:#fff;padding:20px;border:1px solid #dad7cf;border-radius:12px;margin-bottom:24px;display:grid;gap:12px}.workspace-tools .actions{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.workspace-tools button{align-self:end}#workspace-status{font-size:.85rem;color:#444}
 
 textarea{font:inherit;width:100%;padding:10px;border:1px solid #bbb;border-radius:6px;resize:vertical}#admin-manifest{font-family:monospace;font-size:.8rem}#editor-panel{display:grid;gap:12px}footer a{color:inherit}
+
+#editor-fields{display:grid;gap:12px}#editor-fields details{border:1px solid #ccc;padding:12px;border-radius:10px}#editor-fields summary{cursor:pointer;font-weight:700}.editor-field-row{display:grid;grid-template-columns:1fr;gap:8px;padding:8px 0;border-bottom:1px solid #ddd}#audit-feed,#asset-candidates{display:grid;gap:8px}#enroll-panel{display:grid;gap:12px}

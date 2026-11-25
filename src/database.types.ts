@@ -115,6 +115,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      studio_audit_feed: {
+        Args: never
+        Returns: {
+          action: string
+          created_at: string
+          release_id: string
+          title: string
+        }[]
+      }
+      studio_create_draft: {
+        Args: { draft_manifest: Json; draft_title: string }
+        Returns: string
+      }
       studio_publish_release: {
         Args: { expected_current: string; target: string }
         Returns: string

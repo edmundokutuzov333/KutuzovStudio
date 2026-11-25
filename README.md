@@ -46,3 +46,6 @@ Editorial releases reject unrecognized manifest keys both in PostgreSQL and in t
 
 ## Asset ecosystem (0.8)
 12 original vector background patterns, persisted in portable projects, metadata published in Studio Essentials 2.0. Magnific connector search verified; three actual candidates stored as private metadata with quoted costs, no files or external previews, no downloads. A normal stock license does not authorize redistributing editable content to arbitrary visitors. Provider API delivery is intentionally not enabled until a zero-cost and redistribution-authorized agreement exists. No API secret is in the repository. Candidates are accessible only with editor AAL2; original assets remain local.
+
+## Editorial hardening (0.8.1)
+Draft creation RPC is idempotent by content/title; unique draft index prevents duplicate retries. MFA-protected audit projection exposes only release metadata, not actor identifiers. Known original background IDs checked in PostgreSQL. Admin has structured labels/palette/collection editing, advanced JSON, audit feed, and explicit first TOTP enrollment with a manually entered secret. Provisioning the real editor account is still required; no credentials are created by the application. No real auth browser test has been run.
