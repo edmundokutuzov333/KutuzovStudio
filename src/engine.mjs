@@ -1,3 +1,4 @@
+import {backgroundPermission} from './asset-policy.mjs';
 import {backgroundNodes} from './backgrounds.mjs';
 import {badgeFields,code39Bars,code39Svg} from './badge.mjs';
 import {qrSvg,qrMatrix} from './qr.mjs';
@@ -68,7 +69,7 @@ export function composeDocument({format,profile,template,orientation='native',ph
   if(template.layout==='split'&&!portrait&&w>=h){const band=Math.min(8,area.w*.15);nodes.push(rect(area.x,area.y,band,area.h,accent));area.x+=band+1.2;area.w-=band+1.2}
   const fit=fitBlock(fields,{...area,align:textAlign==='auto'?(template.layout==='center'?'middle':'start'):textAlign,center:template.layout!=='editorial'},f.font,measure);nodes.push(...fit.nodes);warnings.push(...fit.warnings);sides[side]=nodes;
  }
- return {geometry:g,templateId:template.id,sides,warnings:[...new Set(warnings)]};
+ return {geometry:g,templateId:template.id,backgroundRights:profile.background==='uploaded'?backgroundPermission(backgroundImage):null,sides,warnings:[...new Set(warnings)]};
 }
 export function svgDocument(doc,side='front',includeBleed=true){
  const {w,h,b:bleed}=doc.geometry,b=includeBleed?bleed:0,W=w+2*b,H=h+2*b;

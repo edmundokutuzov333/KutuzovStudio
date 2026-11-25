@@ -1,3 +1,4 @@
+import {assertEditable} from './asset-policy.mjs';
 import {svgDocument} from './engine.mjs';
 import {printGeometry} from './print.mjs';
 export function vectorPage(doc,side,marks=true){
@@ -7,6 +8,7 @@ export function vectorPage(doc,side,marks=true){
  return '<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'mm" height="'+H+'mm" viewBox="0 0 '+W+' '+H+'"><rect width="'+W+'" height="'+H+'" fill="white"/>'+nested+(cut?'<path d="'+cut+'" stroke="#000" stroke-width=".088" fill="none"/>':'')+'</svg>';
 }
 export async function nativePrint(doc,marks=true,isCurrent=()=>true){
+ assertEditable(doc);
  const assets=[...new Set(Object.values(doc.sides).flat().filter(n=>n.kind==='image').map(n=>n.asset.data))];await Promise.all(assets.map(async data=>{const image=new Image();image.src=data;await image.decode()}));await document.fonts.ready;if(!isCurrent())return;
  if(document.body.classList.contains('native-print-active'))throw Error('Já existe uma impressão activa.');
  const g=doc.geometry,geo=printGeometry(g,marks),w=geo.media[2]*25.4/72,h=geo.media[3]*25.4/72;

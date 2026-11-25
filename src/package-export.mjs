@@ -1,3 +1,4 @@
+import {assertEditable} from './asset-policy.mjs';
 import {productionTools} from './production-tools.mjs';
 import {printReport} from './preflight.mjs';
 import {crc32,exportPdf,exportPng} from './print.mjs';
@@ -14,7 +15,7 @@ export function zipStore(entries){
  return new Blob([...parts,...directory,end.bytes],{type:'application/zip'});
 }
 export async function exportPackage(doc,{dpi=300,marks=true}={}){
- const entries=[];const add=async(name,blob)=>entries.push({name,bytes:new Uint8Array(await blob.arrayBuffer())});
+ assertEditable(doc);const entries=[];const add=async(name,blob)=>entries.push({name,bytes:new Uint8Array(await blob.arrayBuffer())});
  await add('print.pdf',await exportPdf(doc,{dpi,marks}));
  for(const side of ['front','back']){entries.push({name:side+'.svg',bytes:zipEnc(svgDocument(doc,side,true))});await add(side+'.png',await exportPng(doc,side,dpi))}
  const g=doc.geometry;entries.push({name:'PRINT-README.txt',bytes:zipEnc('Kutuzov Studio\nCorte: '+g.w+' x '+g.h+' mm\nSangria: '+g.b+' mm\nResolução: '+dpi+' DPI\nPDF RGB sem perdas, duas páginas. Imprimir a 100%, sem ajuste de escala. SVG contém fontes de sistema. Confirmar cor e tolerância com a gráfica. Não é PDF/X nem CMYK. Inclui ferramentas de pré-impressão opcionais; lê PREPRESS.txt.\n')});entries.push({name:'PRINT-SPEC.json',bytes:zipEnc(JSON.stringify(printReport(doc,{dpi,marks}),null,2))});for(const [name,content] of Object.entries(productionTools))entries.push({name,bytes:zipEnc(content)});return zipStore(entries)

@@ -1,3 +1,4 @@
+import {backgroundPermission,assertPortable} from './asset-policy.mjs';
 import {normalizeProfile,validFormat,composeDocument} from './engine.mjs';
 import {badgeFields} from './badge.mjs';
 import {templates,proposals} from './templates.mjs';
@@ -12,7 +13,7 @@ export function validateSnapshot(input){
  for(const [k,min,max] of [['focusX',0,100],['focusY',0,100],['textScale',75,125]])if(!/^\d+$/.test(f[k])||Number(f[k])<min||Number(f[k])>max)throw Error('Controlo inválido.');
  if(!Number.isInteger(input.seed)||input.seed<0||input.seed>4||!proposals({family:f.family,industry:f.industry,seed:input.seed}).some(t=>t.id===input.templateId))throw Error('Proposta inválida.');
  normalizeProfile(f);if(f.product==='badge')badgeFields(f);
- const assets={};for(const k of ['photo','logo','backgroundImage']){const a=input.assets?.[k]??null;if(a&&(!a.data||typeof a.data!=='string'||a.data.length>20000000||!/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(a.data)||!Number.isInteger(a.width)||!Number.isInteger(a.height)||a.width<1||a.height<1||a.width>2400||a.height>2400))throw Error('Imagem inválida.');assets[k]=a?{data:a.data,width:a.width,height:a.height}:null}
+ const assets={};for(const k of ['photo','logo','backgroundImage']){const a=input.assets?.[k]??null;if(a&&(!a.data||typeof a.data!=='string'||a.data.length>20000000||!/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(a.data)||!Number.isInteger(a.width)||!Number.isInteger(a.height)||a.width<1||a.height<1||a.width>2400||a.height>2400))throw Error('Imagem inválida.');assets[k]=a?{data:a.data,width:a.width,height:a.height,...(k==='backgroundImage'?{rights:backgroundPermission(a)}:{})}:null}
  if(Object.values(assets).reduce((sum,a)=>sum+(a?.data.length||0),0)>40000000)throw Error('Projecto demasiado grande. Reduz as imagens.');
  const format=Object.fromEntries(['id','product','label','width_mm','height_mm','bleed_mm','safe_mm','position'].map(k=>[k,input.format[k]]));
  if(f.format==='custom'&&[Number(f.width),Number(f.height),Number(f.bleed)].some((v,i)=>v!==[format.width_mm,format.height_mm,format.bleed_mm][i]))throw Error('Dimensões inconsistentes.');
@@ -29,7 +30,7 @@ export async function loadProject(id){const row=await tx('projects','readonly',s
 export async function deleteProject(id){await tx('projects','readwrite',s=>s.delete(id))}
 export async function setting(id,value){if(arguments.length===1)return (await tx('settings','readonly',s=>s.get(id)))?.value??null;await tx('settings','readwrite',s=>s.put({id,value}));return value}
 export function brandFrom(s){const v=validateSnapshot(s),f=v.fields;return {company:f.company,website:f.website,address:f.address,slogan:f.slogan,color:f.color,customColor:f.customColor,family:f.family,logo:v.assets.logo}}
-export function portable(title,snapshot){return JSON.stringify({kind:'kutuzov-studio-project',title:String(title).slice(0,100),snapshot:validateSnapshot(snapshot)})}
+export function portable(title,snapshot){const s=validateSnapshot(snapshot);assertPortable(s);title=String(title).trim();if(!title||title.length>100)throw Error('Nome de projecto inválido.');return JSON.stringify({kind:'kutuzov-studio-project',title,snapshot:s})}
 export function parsePortable(text){if(typeof text!=='string'||text.length>42000000)throw Error('Ficheiro demasiado grande.');const p=JSON.parse(text);if(p.kind!=='kutuzov-studio-project'||typeof p.title!=='string'||!p.title.trim()||p.title.length>100)throw Error('Ficheiro .kutuzov inválido.');return {title:p.title,snapshot:validateSnapshot(p.snapshot)}}
 
 export async function verifySnapshotImages(snapshot){const s=validateSnapshot(snapshot);for(const a of Object.values(s.assets)){if(!a)continue;const image=new Image();image.src=a.data;await image.decode();if(image.naturalWidth!==a.width||image.naturalHeight!==a.height)throw Error('Dimensões da imagem não correspondem ao projecto.')}return s}

@@ -70,3 +70,6 @@ Every privileged DB call now requires live private editor membership, current Au
 
 ## Optional provider adapter (0.9.6)
 Deployed metadata-only Edge Function, current-editor and AAL2 checks, origin allowlist, no redirects, fixed stock search endpoint, response allowlist, atomic global 20/day quota, no automatic retries/downloads/generation. Disabled by default pending written authorization and verified search cost; no provider secret configured. Admin supports optional search to manual curation. See docs/magnific-curation.md.
+
+## Asset provenance (0.9.7)
+Explicit per-image rights declaration: editable distribution rights or flattened-only rights. Older uploaded-background snapshots default to flattened-only. SVG, native vector print, production ZIP and portable project export are blocked for flattened-only backgrounds; RGB PDF/PNG/JPG and local saved projects remain available. User declarations are not legal verification. Internal SVG for rendering is not a security boundary. No stock downloads.
