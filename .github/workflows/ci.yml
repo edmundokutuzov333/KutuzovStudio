@@ -54,3 +54,12 @@ jobs:
         run: |
           psql -At -v ON_ERROR_STOP=1 -c 'select json_agg(t) from (select id,product,label,width_mm,height_mm,bleed_mm,safe_mm,position from public.studio_formats where published) t' > /tmp/catalog.json
           node tests/catalog-parity.mjs /tmp/catalog.json
+
+  live-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/live-catalog.mjs
