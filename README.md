@@ -13,3 +13,6 @@ Node tests cover geometry, templates, QR, escaping, layout and mocked catalog. C
 Browser smoke is included in CI. Public remote configuration accepts only HTTPS *.supabase.co and sb_publishable keys. `src/catalog.types.d.ts` derives the public contract from the generated live database types.
 
 CI includes an isolated PostgreSQL 17 service with anon/authenticated roles to apply migrations, test RLS and compare seed data against the local catalog. This is not a live Supabase API test. Editor includes visibility, typography scale/alignment and image framing controls.
+
+## Production engine (0.4)
+Local lossless RGB raster PDF (Flate-compressed), individual two-page PDF with exact MediaBox/TrimBox/BleedBox, optional vector crop marks, A4 duplex imposition with mirrored placement (long edge), PNG front/back at 300/600 DPI with pHYs metadata. Memory cap 12 megapixels per face. No fonts embedded because text is rasterized; no PDF/X, ICC or CMYK claims. Confirm printer requirements and proof physical output. SVG remains available as the vector exchange format. No new remote services.

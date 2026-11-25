@@ -1,3 +1,4 @@
+import {exportPdf,exportPng,sheetGeometry} from './print.mjs';
 import {loadCatalog} from './catalog.mjs';
 import {customFormat,oriented,browserMeasure,composeDocument,svgDocument} from './engine.mjs';
 import {families,proposals} from './templates.mjs';
@@ -30,3 +31,14 @@ field('format').addEventListener('change',()=>{$('custom').hidden=field('format'
 for(const k of ['photo','logo']){field(k).addEventListener('change',async()=>{const epoch=++assetEpoch[k];if(!field(k).files[0])return;$('asset-status').textContent='A processar imagem localmente…';try{const a=await readImage(field(k).files[0],k==='logo');if(epoch!==assetEpoch[k])return;assets[k]=a;$('asset-status').textContent='Imagem carregada.';update()}catch(e){if(epoch===assetEpoch[k]){$('asset-status').textContent=e.message+(assets[k]?' A imagem anterior foi mantida.':'');field(k).value=''}}});form.querySelector('[data-clear="'+k+'"]').addEventListener('click',()=>{assetEpoch[k]++;assets[k]=null;field(k).value='';$('asset-status').textContent='Imagem removida.';update()})}
 window.addEventListener('pagehide',()=>{clearUrls(urls);clearUrls(detailUrls)});
 setFormats();update();
+
+const printButtons=['download-pdf','download-sheet','download-png-front','download-png-back'].map($);let exporting=false;
+async function runExport(kind,side){
+ if(exporting||!chosen)return;const item=chosen,dpi=Number($('print-dpi').value),marks=$('print-marks').checked;
+ exporting=true;printButtons.forEach(b=>b.disabled=true);$('print-status').textContent='A preparar ficheiro localmente…';
+ try{const sheet=kind==='sheet';const blob=kind==='png'?await exportPng(item.doc,side,dpi):await exportPdf(item.doc,{dpi,marks,sheet});
+ const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='kutuzov-'+item.template.id+'-'+(sheet?'a4':kind==='png'?side:'duplex')+'-'+dpi+'dpi.'+(kind==='png'?'png':'pdf');a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
+ $('print-status').textContent=sheet?'PDF A4 preparado: '+sheetGeometry(item.doc.geometry).count+' cartões por face. Imprime a 100%, duplex pela margem longa.':'Ficheiro preparado. Verifica a escala e os requisitos da gráfica.';
+ }catch(e){$('print-status').textContent=e instanceof Error?e.message:'Falha na exportação.'}finally{exporting=false;printButtons.forEach(b=>b.disabled=false)}
+}
+$('download-pdf').addEventListener('click',()=>runExport('pdf'));$('download-sheet').addEventListener('click',()=>runExport('sheet'));$('download-png-front').addEventListener('click',()=>runExport('png','front'));$('download-png-back').addEventListener('click',()=>runExport('png','back'));
