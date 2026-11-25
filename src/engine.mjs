@@ -1,4 +1,4 @@
-import {badgeFields} from './badge.mjs';
+import {badgeFields,code39Bars,code39Svg} from './badge.mjs';
 import {qrSvg,qrMatrix} from './qr.mjs';
 import {proposals,templates} from './templates.mjs';
 export function validFormat(f){return !!f && typeof f.id==="string" && /^[a-z0-9-]{1,40}$/.test(f.id)&&["card","badge"].includes(f.product)&&typeof f.label==="string"&&f.label.length>0&&f.label.length<=100&&["width_mm","height_mm","bleed_mm","safe_mm","position"].every(k=>typeof f[k]==="number"&&Number.isFinite(f[k]))&&f.width_mm>=25&&f.width_mm<=200&&f.height_mm>=25&&f.height_mm<=200&&f.bleed_mm>=0&&f.bleed_mm<=5&&f.safe_mm>=2&&f.safe_mm<=8&&Math.min(f.width_mm,f.height_mm)>2*f.safe_mm&&Number.isInteger(f.position)&&f.position>=0&&f.position<=2147483647}
@@ -59,6 +59,7 @@ export function composeDocument({format,profile,template,orientation='native',ph
    else{const ph=area.h*.32,pw=Math.min(area.w*.58,ph);nodes.push(image(photo,area.x+(area.w-pw)/2,area.y,pw,ph,photoMode));area.y+=ph+1;area.h-=ph+1}
   }
   if(isFront&&showLogo&&logo){const lh=Math.min(area.h*.18,8),lw=Math.min(area.w*.45,lh*2);nodes.push({...image(logo,area.x,area.y,lw,lh,'contain'),focusX:.5,focusY:.5});area.y+=lh+1;area.h-=lh+1;}
+  if(!isFront&&badge?.barcode){const bh=Math.min(10,area.h*.23),bw=area.w;if(bw/code39Bars(badge.barcode).modules<.19)warnings.push('Code 39 estreito: confirma leitura após impressão.');nodes.push({kind:'barcode',value:badge.barcode,x:area.x,y:area.y+area.h-bh,w:bw,h:bh});area.h-=bh+1.5;}
   if(!isFront&&p.qr){const qs=Math.min(area.w*.44,area.h*.66,26);if(qs/45<.40)warnings.push('QR pequeno: confirma leitura após impressão.');if(w>=h){nodes.push({kind:'qr',value:p.qr,x:area.x+area.w-qs,y:area.y+(area.h-qs)/2,size:qs});area.w-=qs+1.5}else{nodes.push({kind:'qr',value:p.qr,x:area.x+(area.w-qs)/2,y:area.y+area.h-qs,size:qs});area.h-=qs+1.5}}
   const unit=Math.min(w,h),field=(key,value,factor,weight=400)=>({key,value,size:Math.min(10,unit*factor*textScale),weight,gap:Math.max(.35,unit*.012),fill:fg});
   let fields=isFront?[field('company',p.company,.052,600),field('name',p.name,.12,700),field('role',p.role,.064),field('phone',p.phone,.049),field('email',p.email,.049)]:[field('company',p.company||p.name,.105,700),field('slogan',p.slogan,.059),field('website',p.website,.052),field('address',p.address,.049),field('phone',p.phone,.049),field('email',p.email,.049)];
@@ -77,6 +78,7 @@ export function svgDocument(doc,side='front',includeBleed=true){
   if(n.kind==='circle')return '<circle cx="'+n.x+'" cy="'+n.y+'" r="'+n.r+'" stroke="'+n.fill+'" fill="none" stroke-width=".5"/>';
   if(n.kind==='path')return '<path d="'+n.d+'" fill="'+n.fill+'"/>';
   if(n.kind==='text')return '<text x="'+n.x+'" y="'+n.y+'" font-family="'+n.font+'" font-size="'+n.size.toFixed(4)+'" font-weight="'+n.weight+'" fill="'+n.fill+'" text-anchor="'+n.align+'">'+escapeXml(n.value)+'</text>';
+  if(n.kind==='barcode')return code39Svg(n.value,n.x,n.y,n.w,n.h);
   if(n.kind==='qr')return qrSvg(n.value,n.x,n.y,n.size);
   if(n.kind==='image'){const id='image-'+(++count),a=n.asset,k=n.mode==='cover'?Math.max(n.w/a.width,n.h/a.height):Math.min(n.w/a.width,n.h/a.height),iw=a.width*k,ih=a.height*k,x=n.x+(n.w-iw)*n.focusX,y=n.y+(n.h-ih)*n.focusY;return '<defs><clipPath id="'+id+'"><rect x="'+n.x+'" y="'+n.y+'" width="'+n.w+'" height="'+n.h+'"/></clipPath></defs><image href="'+a.data+'" x="'+x+'" y="'+y+'" width="'+iw+'" height="'+ih+'" clip-path="url(#'+id+')" preserveAspectRatio="none"/>'}
   throw Error('Unknown node');

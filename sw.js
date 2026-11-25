@@ -1,4 +1,4 @@
-const CACHE='kutuzov-shell-v07-1';
+const CACHE='kutuzov-shell-v07-2';
 const SHELL=['./','./index.html','./src/style.css','./src/app.mjs','./src/engine.mjs','./src/templates.mjs','./src/qr.mjs','./src/images.mjs','./src/catalog.mjs','./src/config.mjs','./src/print.mjs','./src/native-print.mjs','./src/package-export.mjs','./src/badge.mjs','./src/batch.mjs','./src/workspace.mjs','./src/editorial.mjs','./src/editorial-default.mjs'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('kutuzov-shell-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
