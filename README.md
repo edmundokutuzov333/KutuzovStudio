@@ -24,3 +24,6 @@ Nested SVG viewports are expressed in the outer millimetre-coordinate user units
 
 ## Additional print formats (0.4.2)
 A3 and A4 duplex sheet imposition, JPG with JFIF DPI metadata, portable ZIP containing PDF/PNG/SVG and printer instructions, and DPI-specific preflight warnings. Native vector print fixture is checked in CI with Chromium and Poppler. The direct PDF is RGB raster; native browser PDF has browser-dependent page rounding and lacks explicit trim/bleed metadata. No PDF/X or CMYK certification.
+
+## Badge Studio (0.5)
+Private organization/event badges: type, department, internal identifier, validity and shared two-sided engine. Local CSV batch up to 50, filename-matched individual photos, unique IDs, sequential PDF export into ZIP. No identity verification, access-control system or official credentials. No barcode other than QR yet.

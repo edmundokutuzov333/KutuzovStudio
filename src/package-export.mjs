@@ -3,7 +3,7 @@ import {svgDocument} from './engine.mjs';
 const zipEnc=s=>new TextEncoder().encode(s);
 function zipHeader(size){const bytes=new Uint8Array(size),v=new DataView(bytes.buffer);return {bytes,u16:(offset,n)=>v.setUint16(offset,n,true),u32:(offset,n)=>v.setUint32(offset,n,true)}}
 export function zipStore(entries){
- if(!Array.isArray(entries)||!entries.length||entries.length>20)throw Error('Pacote inválido.');
+ if(!Array.isArray(entries)||!entries.length||entries.length>200)throw Error('Pacote inválido.');
  const parts=[],directory=[],names=new Set();let offset=0,centralSize=0;
  for(const entry of entries){if(!entry||typeof entry.name!=='string'||!/^[a-zA-Z0-9_.-]{1,100}$/.test(entry.name)||entry.name==='.'||entry.name==='..'||names.has(entry.name)||!(entry.bytes instanceof Uint8Array)||entry.bytes.length>60000000)throw Error('Entrada ZIP inválida.');names.add(entry.name);const name=zipEnc(entry.name),size=entry.bytes.length,crc=crc32(entry.bytes);const a=zipHeader(30);
  a.u32(0,0x04034b50);a.u16(4,20);a.u16(12,33);a.u32(14,crc);a.u32(18,size);a.u32(22,size);a.u16(26,name.length);
