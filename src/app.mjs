@@ -47,5 +47,5 @@ async function runExport(kind,side){
 }
 $('download-pdf').addEventListener('click',()=>runExport('pdf'));$('download-sheet').addEventListener('click',()=>runExport('sheet'));$('download-png-front').addEventListener('click',()=>runExport('png','front'));$('download-png-back').addEventListener('click',()=>runExport('png','back'));
 
-$('native-print-button').addEventListener('click',()=>{if(!approved())return;try{nativePrint(chosen.doc,$('print-marks').checked)}catch(e){$('print-status').textContent=e.message}});
+$('native-print-button').addEventListener('click',async()=>{if(exporting||!approved())return;const started=revision;exporting=true;$('native-print-button').disabled=true;try{await nativePrint(chosen.doc,$('print-marks').checked,()=>revision===started)}catch(e){if(revision===started)$('print-status').textContent=e.message}finally{exporting=false;$('native-print-button').disabled=false}});
 for(const id of ['print-dpi','print-marks'])$(id).addEventListener('change',clearPrint);

@@ -19,3 +19,5 @@ Local lossless RGB raster PDF (Flate-compressed), individual two-page PDF with e
 
 ## Release hardening (0.4.1)
 Export revision tokens prevent stale asynchronous downloads, pending image decoding blocks export, and quality warnings require acknowledgment. Native browser printing uses the same SVG document and physical page geometry; browser PDF font embedding, trim/bleed boxes and colour management are not guaranteed by this option. Direct PDF remains lossless RGB with explicit trim/bleed boxes. PDF/X, validated ICC CMYK and physical proofs are not certified. Catalog decoder accepts PostgreSQL decimal strings and rejects redirects/credentials. Live schema generated types match checked-in types; no backend schema change necessary.
+
+Nested SVG viewports are expressed in the outer millimetre-coordinate user units (not nested CSS mm); native printing waits for embedded images and font readiness. Stale print requests are cancelled before invoking the browser dialog.
