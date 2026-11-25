@@ -42,7 +42,8 @@ def convert(source, profile, output, condition):
         if not shutil.which(tool): raise RuntimeError(f'Install {tool} first')
     version=re.match(r'^(\d+)\.(\d+)',run(['gs','--version']).strip())
     if not version: raise RuntimeError('Cannot determine Ghostscript version')
-    pdfx_option='-dPDFX=3' if tuple(map(int,version.groups())) >= (10,5) else '-dPDFX'
+    if tuple(map(int,version.groups())) < (10,5): raise RuntimeError('Ghostscript 10.05 or newer required for the verified PDF/X-3 conversion workflow')
+    pdfx_option='-dPDFX=3'
     pages,before=inspect(source)
     with tempfile.TemporaryDirectory(prefix='studio-pdfx-') as temp:
         temp=Path(temp); dst=temp/'candidate.pdf'; prefix=temp/'intent.ps'; iccpath=temp/'output.icc'; iccpath.write_bytes(icc)

@@ -12,10 +12,8 @@ jobs:
           node-version: '22'
       - run: npm test
       - run: for f in src/*.mjs tests/*.mjs sw.js; do node --check "$f"; done
-      - name: Install proof tools
-        run: sudo apt-get update && sudo apt-get install -y ghostscript poppler-utils inkscape
-      - name: Install vector PDF dependency
-        run: python3 -m venv /tmp/studio-venv && /tmp/studio-venv/bin/pip install pypdf==5.9.0
+      - name: Prepare browser environment
+        run: python3 -m venv /tmp/studio-venv
       - name: Browser smoke (real-time Playwright)
         run: |
           /tmp/studio-venv/bin/pip install playwright==1.51.0
@@ -23,6 +21,17 @@ jobs:
           python3 -m http.server 8000 > /tmp/studio-http.log 2>&1 &
           for i in {1..20}; do curl -fsS http://localhost:8000/ >/dev/null && break; sleep 1; done
           /tmp/studio-venv/bin/python tests/browser_smoke.py
+  print-proof:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install proof tools
+        run: sudo apt-get update && sudo apt-get install -y ghostscript poppler-utils inkscape
+      - name: Install vector PDF dependency
+        run: python3 -m venv /tmp/studio-venv && /tmp/studio-venv/bin/pip install pypdf==5.9.0
       - name: Vector PDF proof
         run: |
           node tests/vector-proof.mjs /tmp/studio-vector.html
