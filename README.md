@@ -40,3 +40,6 @@ Code 39 barcode on badge reverse, batch clears individual fields rather than inh
 Batch orchestration has injectable test adapters for cancellation, per-person data isolation and photo matching; imported image files are decoded and their real dimensions checked before restoring into the editor.
 
 Editorial releases reject unrecognized manifest keys both in PostgreSQL and in the frontend, including private metadata. Security tests reject user_metadata role spoofing. The SQL role/MFA tests use synthetic JWT claims in a rollback transaction, not a real login.
+
+## Production handoff (0.7.3)
+`tools/pdfx.py` performs local Ghostscript CMYK PDF/X-3 candidate conversion with a user-supplied printer ICC, verifies physical boxes and page count, embedded fonts and renderability via Poppler/Ghostscript. No profile bundled. Independent PDF/X validation and physical proof remain mandatory. ZIP now includes PRINT-SPEC.json with geometry and DPI-specific warnings. CI YAML rebuilt to remove duplicated/truncated jobs.

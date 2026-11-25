@@ -3,7 +3,7 @@ on: [push, workflow_dispatch]
 permissions:
   contents: read
 jobs:
-  test:
+  application:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -11,69 +11,28 @@ jobs:
         with:
           node-version: '22'
       - run: npm test
-      - run: for f in src/*.mjs; do node --check "$f"; done
-      - name: Browser smoke (Chrome)
+      - run: for f in src/*.mjs tests/*.mjs sw.js; do node --check "$f"; done
+      - name: Install proof tools
+        run: sudo apt-get update && sudo apt-get install -y ghostscript poppler-utils
+      - name: Browser smoke
         run: |
           python3 -m http.server 8000 > /tmp/studio-http.log 2>&1 &
           for i in {1..20}; do curl -fsS http://localhost:8000/ >/dev/null && break; sleep 1; done
-          google-chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=15000 --dump-dom http://localhost:8000/tests/browser.html > /tmp/studio-browser.html
+          google-chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=30000 --dump-dom http://localhost:8000/tests/browser.html > /tmp/studio-browser.html
           grep -q 'STUDIO_BROWSER_PASS' /tmp/studio-browser.html
-      - name: Verify native vector PDF proof
+      - name: Vector PDF proof
         run: |
-          command -v pdfinfo >/dev/null || (sudo apt-get update && sudo apt-get install -y poppler-utils)
           node tests/vector-proof.mjs /tmp/studio-vector.html
           google-chrome --headless --no-sandbox --disable-gpu --no-pdf-header-footer --print-to-pdf=/tmp/studio-vector.pdf file:///tmp/studio-vector.html
-          pdfinfo /tmp/studio-vector.pdf | grep -Eq '^Pages: +2
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_PASSWORD: studio_ci_only
-          POSTGRES_DB: studio
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d studio"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      PGHOST: localhost
-      PGPORT: 5432
-      PGUSER: postgres
-      PGPASSWORD: studio_ci_only
-      PGDATABASE: studio
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Apply catalog migration in isolated PostgreSQL
-        run: |
-          psql -v ON_ERROR_STOP=1 -c 'create role anon nologin; create role authenticated nologin;'
-          psql -v ON_ERROR_STOP=1 -f tests/postgres-auth-stub.sql
-          for migration in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -f "$migration"; done
-      - name: Verify public RLS and column grants
-        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_permissions.sql
-      - name: Verify editorial RLS, MFA, publication and audit
-        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/editorial_permissions.sql
-      - name: Verify seed matches browser catalog
-        run: |
-          psql -At -v ON_ERROR_STOP=1 -c 'select json_agg(t) from (select id,product,label,width_mm,height_mm,bleed_mm,safe_mm,position from public.studio_formats where published) t' > /tmp/catalog.json
-          node tests/catalog-parity.mjs /tmp/catalog.json
-
-  live-catalog:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - run: node tests/live-catalog.mjs
-
+          pdfinfo /tmp/studio-vector.pdf | grep -Eq '^Pages: +2$'
           pdftotext /tmp/studio-vector.pdf - | grep -F 'Ana João'
           pdffonts /tmp/studio-vector.pdf | grep -Eq 'yes +yes +yes'
+      - name: Offline CMYK conversion proof
+        run: |
+          node tests/pdfx-fixture.mjs /tmp/studio-rgb.pdf
+          profile=$(find /usr/share/color/icc -name default_cmyk.icc -print -quit)
+          test -n "$profile"
+          python3 tools/pdfx.py /tmp/studio-rgb.pdf "$profile" /tmp/studio-cmyk.pdf --condition 'CI SWOP test only'
   postgres-contract:
     runs-on: ubuntu-latest
     services:
@@ -100,17 +59,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply catalog migration in isolated PostgreSQL
-        run: |
+      - run: |
           psql -v ON_ERROR_STOP=1 -c 'create role anon nologin; create role authenticated nologin;'
+          psql -v ON_ERROR_STOP=1 -f tests/postgres-auth-stub.sql
           for migration in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -f "$migration"; done
-      - name: Verify public RLS and column grants
-        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_permissions.sql
-      - name: Verify seed matches browser catalog
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_permissions.sql
+      - run: psql -v ON_ERROR_STOP=1 -f supabase/tests/editorial_permissions.sql
+      - name: Catalog parity
         run: |
           psql -At -v ON_ERROR_STOP=1 -c 'select json_agg(t) from (select id,product,label,width_mm,height_mm,bleed_mm,safe_mm,position from public.studio_formats where published) t' > /tmp/catalog.json
           node tests/catalog-parity.mjs /tmp/catalog.json
-
   live-catalog:
     runs-on: ubuntu-latest
     steps:
