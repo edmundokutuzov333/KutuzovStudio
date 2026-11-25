@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+const base=process.env.STUDIO_URL;
+if(!base)throw Error('STUDIO_URL is required');
+const u=new URL(base);if(u.protocol!=='https:'||u.origin!==base||u.username||u.password)throw Error('Expected exact HTTPS origin');
+const get=async path=>fetch(new URL(path,u),{redirect:'manual',signal:AbortSignal.timeout(20000),cache:'no-store'});
+const health=await get('/health.json');assert.equal(health.status,200);assert.match(health.headers.get('content-type')||'',/json/i);const h=await health.json();assert.equal(h.service,'kutuzov-studio');assert.equal(h.status,'ok');assert.match(h.commit,/^[0-9a-f]{40}$/);if(process.env.EXPECTED_SHA)assert.equal(h.commit,process.env.EXPECTED_SHA);
+const page=await get('/');assert.equal(page.status,200);assert.match(await page.text(),/Kutuzov Studio/);assert.equal(page.headers.get('x-content-type-options'),'nosniff');assert.match(page.headers.get('content-security-policy')||'',/frame-ancestors 'none'/);assert.match(page.headers.get('permissions-policy')||'',/camera=\(\)/);
+const mod=await get('/src/app.mjs');assert.equal(mod.status,200);assert.match(mod.headers.get('content-type')||'',/(javascript|ecmascript)/i);const admin=await get('/admin.html');assert.equal(admin.status,200);assert.match(admin.headers.get('x-robots-tag')||'',/noindex/i);assert.match(await admin.text(),/MFA/);
+const sw=await get('/sw.js');assert.equal(sw.status,200);assert.match(await sw.text(),new RegExp(h.release));const missing=await get('/tests/browser.mjs');assert.equal(missing.status,404);const privateFile=await get('/supabase/migrations/20261125150524_studio_catalog.sql');assert.equal(privateFile.status,404);
+const sitemap=await get('/sitemap.xml');assert.equal(sitemap.status,200);assert.match(await sitemap.text(),new RegExp(u.hostname.replaceAll('.','\\.')));
+console.log(JSON.stringify({origin:base,commit:h.commit,release:h.release,health:'ok',headers:'ok',privatePaths:'404',sitemap:'ok'}));

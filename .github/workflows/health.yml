@@ -1,0 +1,30 @@
+name: Studio live health
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'Exact HTTPS Studio origin'
+        required: false
+        type: string
+  schedule:
+    - cron: '23 6 * * *'
+permissions:
+  contents: read
+jobs:
+  public-smoke:
+    runs-on: ubuntu-24.04
+    env:
+      STUDIO_URL: ${{ inputs.url || vars.STUDIO_PRODUCTION_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify public deployment and backend
+        run: |
+          if [ -z "$STUDIO_URL" ]; then
+            echo "Deployment monitoring not configured. Set STUDIO_PRODUCTION_URL in repository Actions variables."
+            exit 1
+          fi
+          node tests/deployment-smoke.mjs
+          node tests/live-catalog.mjs

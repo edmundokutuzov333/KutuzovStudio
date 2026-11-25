@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: '22'
       - name: Install proof tools
-        run: sudo apt-get update && sudo apt-get install -y ghostscript poppler-utils inkscape
+        run: sudo apt-get update && sudo apt-get install -y ghostscript poppler-utils inkscape zbar-tools
       - name: Install vector PDF dependency
         run: python3 -m venv /tmp/studio-venv && /tmp/studio-venv/bin/pip install pypdf==5.9.0
       - name: Vector PDF proof
@@ -55,6 +55,13 @@ jobs:
           pdftotext /tmp/studio-vector-exact.pdf - | grep -F 'Ana João'
           profile=$(find /usr/share/color/icc -name default_cmyk.icc -print -quit)
           /tmp/studio-venv/bin/python tools/pdfx.py /tmp/studio-vector-exact.pdf "$profile" /tmp/studio-vector-cmyk.pdf --condition 'CI SWOP test only'
+      - name: Independent QR and Code 39 scan proof
+        run: |
+          node tests/scan-fixture.mjs /tmp/studio-scan
+          for image in /tmp/studio-scan/*.pgm; do
+            zbarimg --quiet --raw "$image" > "${image%.pgm}.actual"
+            cmp "${image%.pgm}.txt" "${image%.pgm}.actual"
+          done
   postgres-contract:
     runs-on: ubuntu-24.04
     services:
@@ -136,6 +143,16 @@ jobs:
         with:
           node-version: '22'
       - run: npm run build
+      - name: Install browser for release artifact verification
+        run: |
+          python3 -m venv /tmp/release-qa
+          /tmp/release-qa/bin/pip install playwright==1.51.0 pypdf==5.9.0
+          /tmp/release-qa/bin/python -m playwright install chromium
+      - name: Offline, batch, privacy and release build
+        run: |
+          python3 -m http.server 8001 --directory dist > /tmp/studio-release-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://localhost:8001/health.json >/dev/null && break; sleep 1; done
+          /tmp/release-qa/bin/python tests/release_browser.py
       - uses: actions/upload-artifact@v4
         with:
           name: studio-release-${{ github.sha }}

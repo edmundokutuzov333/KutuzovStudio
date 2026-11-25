@@ -1,9 +1,15 @@
-# Phase 04 / 07 / 08 / 09 release gates
-
-This document distinguishes implemented code from independent acceptance.
-- 04: RGB PDF, SVG, PNG, JPG, duplex imposition, ZIP, local vector/ICC/PDF-X candidate workflow. CI tests plus printer proof using the actual paper, press and ICC; formal PDF/X validation is not replaced by the converter.
-- 07: SQL permissions, live membership, MFA, editor workflow, draft/publication/audit. Real administrator must be invited, granted membership, and enrol TOTP. Browser mocks do not establish real-account acceptance.
-- 08: original backgrounds, user-supplied licensed assets with editable/flattened export policy, private metadata curation. Magnific search requires approved commercial/API terms, explicit enablement, a secret and allowed admin origin. No public stock distribution or paid downloads are enabled. See magnific-curation.md.
-- 09: responsive journey, accessible navigation, stale-preview protection, actual browser download tests and mocked editorial UI. CI uses Chromium, Firefox and WebKit, not physical iOS Safari certification.
-
-Do not claim 100% acceptance while an external gate is open or a CI job is not successful on the exact main commit.
+# Phase 01–11 acceptance matrix
+| Phase | Engineering evidence | External gate |
+|---|---|---|
+| 01 Foundation | Static ES modules, dedicated Supabase, migrations, generated types, CI | None for local editor |
+| 02 Design engine | 60 layouts, 12 families, 2,880 face/format/orientation combinations | Creative review with real user briefs |
+| 03 Business cards | Custom formats, two faces, assets, controls, five proposals | Physical print proof |
+| 04 Production | RGB PDF, vector conversion, ICC/PDF-X candidate, PNG/JPG, SVG, A4/A3 duplex, ZIP | Independent PDF/X compliance, printer-approved ICC and physical proof |
+| 05 Badges | Private badges, CSV, per-person PDF ZIP, QR/Code39 | Physical scanner/printer proof |
+| 06 Workspace | IndexedDB, undo/redo, Brand Kit, favourites, portable project, offline shell | Browser eviction and device-specific behavior |
+| 07 Editorial | RLS, live editor revocation, audit, MFA, versioned releases | Create first real admin and enroll TOTP |
+| 08 Assets | 12 original patterns, local uploads, rights policy, private metadata curation and disabled-by-default Magnific adapter | Written provider authorization, verified zero cost, secret, origin and real provider test |
+| 09 Experience | Responsive journey, cross-engine browser flows, focus and stale-state handling | Physical iOS/Android devices, user research and formal accessibility audit |
+| 10 QA | Unit/contract, actual API, browser matrix, independent scan and prepress, offline/privacy/batch, release gate | Results must be green for exact release SHA |
+| 11 Deployment | Allowlisted static build, security headers, noindex admin, SEO, health, CI artifact, production smoke | Vercel release must be READY, monitoring origin configured; Hobby noncommercial only |
+Do not claim full acceptance while an external gate remains. Test fixtures are synthetic, not real user PII.
