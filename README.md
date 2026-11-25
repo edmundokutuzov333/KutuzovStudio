@@ -1,4 +1,4 @@
-# Kutuzov Studio 0.4.2
+# Kutuzov Studio — 1.0.0 release candidate
 Independent main-only repository. Static ES modules; zero runtime dependencies. Node 22, Python 3. `npm test`; `npm run dev`.
 
 ## Implemented scope
@@ -76,3 +76,6 @@ Explicit per-image rights declaration: editable distribution rights or flattened
 
 ## Experience stabilization (0.9.8)
 Product cards and semantic stage navigation, explicit selected-design focus, stable pending previews with disabled stale actions, searchable original background gallery, responsive touch controls and status announcements. Admin concurrent actions lock controls, expired authenticated sessions clear local state. Browser tests use real-time Playwright rather than virtual-time dump-dom (which caused intermittent failure).
+
+## Release candidate / phases 10–11
+Local-first startup; catalogue refresh preserves active physical dimensions; personal reset clears unsaved design/history, batch prevents identity carry-over. Allowlisted static build (`npm run build`), no server functions or runtime npm dependencies, deterministic shell cache, static release health metadata, SEO metadata, privacy and security headers. Git auto-deploy disabled deliberately: release only an exact commit with all required CI jobs green. See docs/release-operations.md and docs/phase-acceptance.md. External acceptance gates remain open.

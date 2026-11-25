@@ -8,13 +8,14 @@ import {buildBatch} from './batch.mjs';
 import {nativePrint} from './native-print.mjs';
 import {exportPdf,exportPng,exportJpg,sheetGeometry,imageResolutionWarnings} from './print.mjs';
 import {exportPackage} from './package-export.mjs';
-import {loadCatalog} from './catalog.mjs';
+import {builtIn,loadCatalog} from './catalog.mjs';
+import {defaultManifest} from './editorial-default.mjs';
 import {customFormat,oriented,browserMeasure,composeDocument,svgDocument} from './engine.mjs';
 import {families,proposals} from './templates.mjs';
 import {readImage} from './images.mjs';
 import {config} from './config.mjs';
 const $=id=>document.getElementById(id),form=$('brief'),field=n=>form.elements.namedItem(n),grid=$('designs'),error=$('error'),editor=$('editor');
-const {formats,source}=await loadCatalog(config);$('catalog-status').textContent=source==='supabase'?'Catálogo online':source==='fallback'?'Catálogo local · ligação indisponível':'Catálogo local';
+let formats=builtIn;$('catalog-status').textContent='Catálogo local · a sincronizar';
 const history=createHistory(12);let restoring=false,currentProject=null,savedFormat=null;const measure=browserMeasure(),assets={photo:null,logo:null,backgroundImage:null},assetEpoch={photo:0,logo:0,backgroundImage:0};let seed=0,selectedId='',docs=[],chosen=null,urls=[],detailUrls=[],timer,exporting=false,printUrl=null,revision=0,batchUrl=null,batchRevision=0,batchRunning=false;const pendingAssets=new Set();
 function option(value,label){const o=document.createElement('option');o.value=value;o.textContent=label;return o}
 for(const f of families)field('family').append(option(f.id,f.label));
@@ -85,14 +86,13 @@ action('brand-delete',async()=>{if(!confirm('Apagar o Brand Kit local?'))return;
 action('favorite-toggle',async()=>{if(!chosen)throw Error('Selecciona um design.');const id=chosen.template.family.id,ids=await refreshFavorites();const next=ids.includes(id)?ids.filter(x=>x!==id):[...ids,id];await setting('favorites',next);await refreshFavorites();wsStatus.textContent=next.includes(id)?'Estilo guardado nos favoritos.':'Estilo removido.'});
 action('favorite-apply',()=>{const id=$('favorite-list').value;if(!families.some(f=>f.id===id))throw Error('Escolhe um estilo.');field('family').value=id;update()});
 setFormats();update();Promise.all([refreshProjects(),refreshFavorites()]).catch(e=>{wsStatus.textContent='Armazenamento local indisponível: '+e.message});
-if('serviceWorker' in navigator&&window.top===window.self)navigator.serviceWorker.register('./sw.js').catch(()=>{wsStatus.textContent+=' · Modo offline indisponível.'});
+if('serviceWorker' in navigator&&window.top===window.self)navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(reg=>{const status=$('offline-status');const show=()=>{if(reg.waiting&&navigator.serviceWorker.controller)status.textContent='Nova versão disponível. Guarda o projecto e fecha todas as abas do Studio para actualizar.'};reg.addEventListener('updatefound',()=>reg.installing?.addEventListener('statechange',show));show();navigator.serviceWorker.ready.then(()=>{if(!reg.waiting)status.textContent='Modo offline preparado neste navegador.'});}).catch(()=>{$('offline-status').textContent='Modo offline indisponível neste navegador.'});
 
-async function initEditorial(){const r=await loadEditorial();$('editorial-status').textContent=r.title+' · '+(r.source==='supabase'?'catálogo editorial online':'catálogo editorial local');const m=r.manifest;const bg=field('background'),available=new Map(m.assets.map(x=>[x.id,x.label]));for(const o of bg.options)if(available.has(o.value))o.textContent=available.get(o.value);else if(!['none','uploaded'].includes(o.value))o.textContent=backgrounds.find(x=>x.id===o.value).label+' · local';renderBackgroundGallery(m.assets);const c=$('editorial-collection'),f=$('editorial-family'),p=$('editorial-palette');c.replaceChildren(option('','Explorar colecções'),...m.collections.map(x=>option(x.id,x.label)));p.replaceChildren(option('','Escolhe uma paleta'),...m.palettes.map(x=>option(x.id,x.label)));c.addEventListener('change',()=>{const col=m.collections.find(x=>x.id===c.value);f.replaceChildren(option('','Selecciona família'),...(col?.families||[]).map(id=>option(id,families.find(x=>x.id===id).label)));if(col){f.value=col.families[0];field('family').value=f.value;update()}});f.addEventListener('change',()=>{if(f.value){field('family').value=f.value;update()}});p.addEventListener('change',()=>{const palette=m.palettes.find(x=>x.id===p.value);if(palette){field('customColor').checked=true;field('color').value=palette.color;update()}})}
-initEditorial().catch(()=>{$('editorial-status').textContent='Catálogo editorial indisponível.'});
+function renderEditorial(r){$('editorial-status').textContent=r.title+' · '+(r.source==='supabase'?'catálogo editorial online':'catálogo editorial local');const m=r.manifest;const bg=field('background'),available=new Map(m.assets.map(x=>[x.id,x.label]));for(const o of bg.options)if(available.has(o.value))o.textContent=available.get(o.value);else if(!['none','uploaded'].includes(o.value))o.textContent=backgrounds.find(x=>x.id===o.value).label+' · local';renderBackgroundGallery(m.assets);const c=$('editorial-collection'),f=$('editorial-family'),p=$('editorial-palette');c.replaceChildren(option('','Explorar colecções'),...m.collections.map(x=>option(x.id,x.label)));p.replaceChildren(option('','Escolhe uma paleta'),...m.palettes.map(x=>option(x.id,x.label)));c.onchange=()=>{const col=m.collections.find(x=>x.id===c.value);f.replaceChildren(option('','Selecciona família'),...(col?.families||[]).map(id=>option(id,families.find(x=>x.id===id).label)));if(col){f.value=col.families[0];field('family').value=f.value;update()}};f.onchange=()=>{if(f.value){field('family').value=f.value;update()}};p.onchange=()=>{const palette=m.palettes.find(x=>x.id===p.value);if(palette){field('customColor').checked=true;field('color').value=palette.color;update()}}}
 
 for(const id of ['workspace-nav','workspace-hero'])$(id).addEventListener('click',()=>{$('my-studio').open=true});
 $('preview-guides').addEventListener('change',()=>{if(!chosen)return;clearUrls(detailUrls);$('front').src=imgUrl(chosen.doc,'front',detailUrls,$('preview-guides').checked);$('back').src=imgUrl(chosen.doc,'back',detailUrls,$('preview-guides').checked);$('guide-legend').hidden=!$('preview-guides').checked});
-$('clear-profile').addEventListener('click',()=>{if(!confirm('Limpar os dados pessoais do design actual?'))return;for(const k of ['name','role','phone','email','badgeId','department','expiry','qr','barcode'])field(k).value='';assetEpoch.photo++;pendingAssets.delete('photo');assets.photo=null;field('photo').value='';update();field('name').focus()});
+$('clear-profile').addEventListener('click',()=>{if(!confirm('Limpar os dados pessoais do design actual?'))return;for(const k of ['name','role','company','phone','email','website','address','slogan','badgeId','department','expiry','qr','barcode'])field(k).value='';for(const k of ['photo','logo','backgroundImage']){assetEpoch[k]++;pendingAssets.delete(k);assets[k]=null;field(k).value=''}if(field('background').value==='uploaded')field('background').value='none';field('background').querySelector('[value="uploaded"]').disabled=true;$('background-rights').value='';$('batch-csv').value='';$('batch-photos').value='';currentProject=null;history.clear();update();historyButtons();$('asset-status').textContent='Dados do design e histórico limpos. Os projectos guardados não foram eliminados.';field('name').focus()});
 
 const galleryUrls=[];
 function syncBackgroundGallery(){for(const b of $('background-gallery').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.background===field('background').value))}
@@ -106,3 +106,15 @@ $('background-rights').addEventListener('change',()=>{if(!assets.backgroundImage
 for(const b of document.querySelectorAll('[data-product]'))b.addEventListener('click',()=>{field('product').value=b.dataset.product;field('product').dispatchEvent(new Event('change',{bubbles:true}));field('format').focus({preventScroll:true})});
 for(const id of ['step-refine','step-produce'])$(id).addEventListener('click',e=>{if($(id).getAttribute('aria-disabled')==='true'){e.preventDefault();$('error').scrollIntoView({block:'center'});field('name').focus()}});
 $('background-filter').addEventListener('input',()=>{const q=$('background-filter').value.trim().toLocaleLowerCase();for(const b of $('background-gallery').querySelectorAll('button'))b.hidden=!b.dataset.label.includes(q)});
+
+function syncRemoteFormats(r){
+ $('catalog-status').textContent=r.source==='supabase'?'Catálogo online':'Catálogo local · ligação indisponível';
+ if(r.source!=='supabase')return;
+ const old=field('format').value,product=field('product').value;
+ // Never change the physical dimensions of an already composed or saved design during background sync.
+ if(old!=='custom'&&!savedFormat){const before=formats.find(x=>x.id===old&&x.product===product),after=r.formats.find(x=>x.id===old&&x.product===product);if(before&&(!after||['width_mm','height_mm','bleed_mm','safe_mm'].some(k=>before[k]!==after[k])))savedFormat=before}
+ formats=r.formats;setFormats();if([...field('format').options].some(o=>o.value===old))field('format').value=old;$('custom').hidden=field('format').value!=='custom';
+}
+renderEditorial({manifest:defaultManifest,title:'Studio Essentials 2.0',source:'local'});
+loadCatalog(config).then(syncRemoteFormats).catch(()=>{$('catalog-status').textContent='Catálogo local'});
+loadEditorial().then(r=>{if(r.source==='supabase'&&!$('editorial-collection').value&&!$('editorial-palette').value)renderEditorial(r);else if(r.source==='supabase')$('editorial-status').textContent='Catálogo online disponível na próxima abertura. A selecção actual foi preservada.'}).catch(()=>{});

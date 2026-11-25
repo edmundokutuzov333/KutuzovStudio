@@ -1,11 +1,13 @@
 {
   "name": "kutuzov-studio",
-  "version": "0.9.9",
+  "version": "1.0.0-rc.1",
   "private": true,
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "dev": "python3 -m http.server 8000"
+    "dev": "python3 -m http.server 8000",
+    "build": "node tools/build.mjs",
+    "preview": "python3 -m http.server 8000 --directory dist"
   },
   "engines": {
     "node": ">=22"

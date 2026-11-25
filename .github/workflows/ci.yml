@@ -2,6 +2,9 @@ name: Studio CI
 on: [push, workflow_dispatch]
 permissions:
   contents: read
+concurrency:
+  group: studio-ci-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   application:
     runs-on: ubuntu-24.04
@@ -124,3 +127,18 @@ jobs:
           python3 -m http.server 8000 > /tmp/studio-admin-http.log 2>&1 &
           for i in {1..20}; do curl -fsS http://localhost:8000/ >/dev/null && break; sleep 1; done
           /tmp/compat/bin/python tests/admin_browser.py
+  release-artifact:
+    needs: [application, print-proof, postgres-contract, live-catalog, browser-compatibility]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: studio-release-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
