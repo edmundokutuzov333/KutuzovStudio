@@ -18,3 +18,39 @@ jobs:
           for i in {1..20}; do curl -fsS http://localhost:8000/ >/dev/null && break; sleep 1; done
           google-chrome --headless --no-sandbox --disable-gpu --virtual-time-budget=15000 --dump-dom http://localhost:8000/tests/browser.html > /tmp/studio-browser.html
           grep -q 'STUDIO_BROWSER_PASS' /tmp/studio-browser.html
+  postgres-contract:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: studio_ci_only
+          POSTGRES_DB: studio
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d studio"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: studio_ci_only
+      PGDATABASE: studio
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply catalog migration in isolated PostgreSQL
+        run: |
+          psql -v ON_ERROR_STOP=1 -c 'create role anon nologin; create role authenticated nologin;'
+          for migration in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -f "$migration"; done
+      - name: Verify public RLS and column grants
+        run: psql -v ON_ERROR_STOP=1 -f supabase/tests/catalog_permissions.sql
+      - name: Verify seed matches browser catalog
+        run: |
+          psql -At -v ON_ERROR_STOP=1 -c 'select json_agg(t) from (select id,product,label,width_mm,height_mm,bleed_mm,safe_mm,position from public.studio_formats where published) t' > /tmp/catalog.json
+          node tests/catalog-parity.mjs /tmp/catalog.json
