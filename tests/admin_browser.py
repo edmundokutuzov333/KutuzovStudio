@@ -19,7 +19,7 @@ with sync_playwright() as p:
         req=route.request
         path=urlsplit(req.url).path
         params=parse_qs(urlsplit(req.url).query)
-        headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'*','Access-Control-Allow-Methods':'GET,POST,PATCH,DELETE,OPTIONS','Content-Type':'application/json'}
+        headers={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'apikey,authorization,content-type,prefer','Access-Control-Allow-Methods':'GET,POST,PATCH,DELETE,OPTIONS','Content-Type':'application/json'}
         if req.method=='OPTIONS':
             route.fulfill(status=204,headers=headers,body='');return
         state['calls'].append(path)
@@ -55,11 +55,11 @@ with sync_playwright() as p:
     state['rows']=[{'id':'published-1','title':'Original','manifest':manifest,'status':'published','created_at':'2026-01-01T00:00:00Z'}]
     page.locator('#admin-email').fill('editor@example.invalid')
     page.locator('#admin-password').fill('fixture-only')
-    page.locator('#login-panel button[type=submit]').click()
+    page.locator('#login-panel button').click()
     expect(page.locator('#mfa-panel')).to_be_visible()
     expect(page.locator('#editor-panel')).to_be_hidden()
     page.locator('#admin-code').fill('123456')
-    page.locator('#mfa-panel button[type=submit]').click()
+    page.locator('#mfa-panel button').click()
     expect(page.locator('#admin-status')).to_have_text('Catálogo carregado.')
     expect(page.locator('body')).to_have_attribute('aria-busy','false')
     page.locator('#admin-title').fill('Rascunho de teste')
