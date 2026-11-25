@@ -1,4 +1,4 @@
-export function validFormat(f){return !!f && typeof f.id==="string" && /^[a-z0-9-]{1,40}$/.test(f.id)&&["card","badge"].includes(f.product)&&typeof f.label==="string"&&f.label.length<=100&&["width_mm","height_mm","bleed_mm","safe_mm","position"].every(k=>typeof f[k]==="number"&&Number.isFinite(f[k]))&&f.width_mm>=25&&f.width_mm<=200&&f.height_mm>=25&&f.height_mm<=200&&f.bleed_mm>=0&&f.bleed_mm<=5&&f.safe_mm>=2&&f.safe_mm<=8&&Math.min(f.width_mm,f.height_mm)>2*f.safe_mm&&Number.isInteger(f.position)&&f.position>=0}
+export function validFormat(f){return !!f && typeof f.id==="string" && /^[a-z0-9-]{1,40}$/.test(f.id)&&["card","badge"].includes(f.product)&&typeof f.label==="string"&&f.label.length>0&&f.label.length<=100&&["width_mm","height_mm","bleed_mm","safe_mm","position"].every(k=>typeof f[k]==="number"&&Number.isFinite(f[k]))&&f.width_mm>=25&&f.width_mm<=200&&f.height_mm>=25&&f.height_mm<=200&&f.bleed_mm>=0&&f.bleed_mm<=5&&f.safe_mm>=2&&f.safe_mm<=8&&Math.min(f.width_mm,f.height_mm)>2*f.safe_mm&&Number.isInteger(f.position)&&f.position>=0}
 
 export function geometry(f,vertical=false){if(!validFormat(f))throw Error("Formato inválido");const w=vertical?Math.min(f.width_mm,f.height_mm):f.width_mm;const h=vertical?Math.max(f.width_mm,f.height_mm):f.height_mm;const b=f.bleed_mm;return {w,h,b,s:f.safe_mm,width:w+2*b,height:h+2*b}}
 
@@ -19,6 +19,6 @@ export function renderSvg(format,profile,style,vertical=false,includeBleed=true)
  if(style===2){const band=w*.25;body+=rect(-b,-b,band+b,H,a);x=band+s;tx=x;max=w-x-s;body+=text(Array.from(p.name)[0]||"",band/2,h*.52,Math.min(band*.65,h*.25),contrastColor(a),700,band*.8,"middle")}
  if(style===3){body+=`<path d="M${w*.7} ${-b} H${w+b} V${h+b} H${w*.92} L${w*.76} ${h*.46} Z" fill="${a}"/>`;max=w*.69-s}
  if(style===4)body+=`<circle cx="${w}" cy="0" r="${Math.min(w,h)*.48}" fill="none" stroke="${fg}" opacity=".25" stroke-width=".5"/>`;
- const scale=Math.min(w,h);const lines=[p.company,p.name,p.role,p.phone,p.email];const ys=[h*.20,h*.43,h*.54,h*.77,h*.88];const sizes=[.062,.125,.062,.052,.052].map(n=>scale*n);lines.forEach((v,i)=>{body+=text(v,tx,Math.max(s+sizes[i],Math.min(h-s,ys[i])),sizes[i],i===0?accent:fg,i===1?700:400,max,anchor)});
+ const scale=Math.min(w,h);const lines=[p.company,p.name,p.role,p.phone,p.email];const ys=[h*.20,h*.43,h*.54,h*.77,h*.88];const sizes=[.062,.125,.062,.052,.052].map(n=>scale*n);lines.forEach((v,i)=>{body+=text(v,tx,Math.max(s+sizes[i],Math.min(h-s,ys[i])),sizes[i],i===0&&(dark||colored)?accent:fg,i===1?700:400,max,anchor)});
  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}mm" height="${H}mm" viewBox="${-b} ${-b} ${W} ${H}" role="img" aria-label="${escapeXml("Design "+p.name)}">${body}</svg>`
 }
