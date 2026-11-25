@@ -8,7 +8,7 @@ export function backgroundNodes(id,g,bg,fg){
  if(id==='geometric')p('M'+x+' '+y+'H'+(x+W*.62)+'L'+x+' '+(y+H*.66)+'Z');
  if(id==='lines'||id==='stripes')for(let i=0;i<12;i++){const xx=x+i*W/12;r(xx,y,id==='lines'?.22:W/36,H)}
  if(id==='grid'){for(let i=0;i<12;i++)r(x+i*W/12,y,.18,H);for(let i=0;i<10;i++)r(x,y+i*H/10,W,.18)}
- if(id==='orbit'||id==='rings')for(let i=1;i<=6;i++)ring(id==='orbit'?x+W:y+W*.5,id==='orbit'?y:y+H*.5,Math.min(W,H)*i/9);
+ if(id==='orbit'||id==='rings')for(let i=1;i<=6;i++)ring(id==='orbit'?x+W:x+W*.5,id==='orbit'?y:y+H*.5,Math.min(W,H)*i/9);
  if(id==='paper')p('M'+x+' '+(y+H)+'H'+(x+W)+'V'+(y+H*.35)+'L'+(x+W*.36)+' '+(y+H*.82)+'Z');
  if(id==='diagonal')for(let i=-2;i<7;i++){const xx=x+i*W/5;p('M'+xx+' '+y+'h'+W/13+'l'+W*.55+' '+H+'h'+(-W/13)+'Z')}
  if(id==='waves')for(let i=0;i<5;i++){const yy=y+H*i/5;p('M'+x+' '+yy+'Q'+(x+W*.25)+' '+(yy-H*.12)+' '+(x+W*.5)+' '+yy+'T'+(x+W)+' '+yy+'v'+H/45+'Q'+(x+W*.75)+' '+(yy+H*.12)+' '+(x+W*.5)+' '+(yy+H/45)+'T'+x+' '+(yy+H/45)+'Z')}

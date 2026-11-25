@@ -52,3 +52,6 @@ Draft creation RPC is idempotent by content/title; unique draft index prevents d
 
 ## Experience design (0.9)
 Editorial mineral/acid design system, responsive header, product onboarding, project library disclosure, progressive editor panels, five proposal stage, explicit sample clearing, keyboard focus/reduced motion, and preview-only print guides. Preserved existing form IDs and print APIs. Native print hides shell. This is coded UI, not a user-tested or accessibility-certified product.
+
+## Asset & UI hardening (0.9.1)
+Actual renderer-driven thumbnail gallery for the 12 editorial backgrounds, and local-only user-owned image backgrounds after a rights confirmation. Original/third-party images are never downloaded by the public Studio. User-supplied background remains part of local project snapshots and exports with a legibility wash; permission is the user's responsibility. Admin MFA challenges are issued at verification time, and active publication is fetched separately from paginated recent versions.

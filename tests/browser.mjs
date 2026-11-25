@@ -5,6 +5,7 @@ async function until(fn){for(let i=0;i<100;i++){if(fn())return;await sleep(50)}t
 try{await until(()=>frame.contentDocument?.querySelectorAll('#designs article').length===5);
  const d=frame.contentDocument,w=frame.contentWindow,f=d.querySelector('#brief'),field=n=>f.elements.namedItem(n);d.querySelector('#my-studio').open=true;
  check(!d.querySelector('#editor').hidden,'editor visible');const guides=d.querySelector('#preview-guides');guides.checked=true;guides.dispatchEvent(new w.Event('change'));check((await (await fetch(d.querySelector('#front').src)).text()).includes('#f04438'),'guides preview');guides.checked=false;guides.dispatchEvent(new w.Event('change'));check(d.querySelector('#front').src.startsWith('blob:'),'front preview');
+ field('background').value='grid';field('background').dispatchEvent(new w.Event('input',{bubbles:true}));await until(()=>d.querySelectorAll('#designs article').length===5);check(field('background').value==='grid','background choice');
  const first=[...d.querySelectorAll('#designs button')].map(x=>x.dataset.id).join(',');d.querySelector('#remix').click();check([...d.querySelectorAll('#designs button')].map(x=>x.dataset.id).join(',')!==first,'remix changes IDs');
  field('name').value='Ana Teste';field('name').dispatchEvent(new w.Event('input',{bubbles:true}));await until(()=>d.querySelectorAll('#designs article').length===5);
  const svg=await (await fetch(d.querySelector('#front').src)).text();check(svg.includes('Ana Teste'),'profile update');
