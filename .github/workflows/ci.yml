@@ -34,14 +34,14 @@ jobs:
           node tests/pdfx-fixture.mjs /tmp/studio-rgb.pdf
           profile=$(find /usr/share/color/icc -name default_cmyk.icc -print -quit)
           test -n "$profile"
-          python3 tools/pdfx.py /tmp/studio-rgb.pdf "$profile" /tmp/studio-cmyk.pdf --condition 'CI SWOP test only'
+          /tmp/studio-venv/bin/python tools/pdfx.py /tmp/studio-rgb.pdf "$profile" /tmp/studio-cmyk.pdf --condition 'CI SWOP test only'
       - name: Exact vector PDF and ICC conversion
         run: |
           node tests/vector-cli-fixture.mjs /tmp/studio-vector-source
           /tmp/studio-venv/bin/python tools/vector_pdf.py /tmp/studio-vector-source/front.svg /tmp/studio-vector-source/back.svg /tmp/studio-vector-source/PRINT-SPEC.json /tmp/studio-vector-exact.pdf
           pdftotext /tmp/studio-vector-exact.pdf - | grep -F 'Ana João'
           profile=$(find /usr/share/color/icc -name default_cmyk.icc -print -quit)
-          python3 tools/pdfx.py /tmp/studio-vector-exact.pdf "$profile" /tmp/studio-vector-cmyk.pdf --condition 'CI SWOP test only'
+          /tmp/studio-venv/bin/python tools/pdfx.py /tmp/studio-vector-exact.pdf "$profile" /tmp/studio-vector-cmyk.pdf --condition 'CI SWOP test only'
   postgres-contract:
     runs-on: ubuntu-latest
     services:

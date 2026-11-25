@@ -10,6 +10,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from pypdf import PdfReader
 
 def run(args):
     r = subprocess.run([str(x) for x in args], capture_output=True, text=True, timeout=180, check=False, env={**os.environ, 'LC_ALL':'C'})
@@ -58,6 +59,12 @@ def convert(source, profile, output, condition):
         if actual!=pages or any(max(abs(a-b) for a,b in zip(before[k],after[k]))>.08 for k in before): raise RuntimeError('Page geometry changed')
         info=run(['pdfinfo','-meta',dst])+run(['pdfinfo','-box',dst])
         if 'PDF/X-3:2002' not in info: raise RuntimeError('PDF/X identifier missing')
+        pdf=PdfReader(dst)
+        intents=pdf.trailer['/Root'].get('/OutputIntents',[])
+        if len(intents)!=1: raise RuntimeError('Missing or ambiguous output intent')
+        intent=intents[0].get_object()
+        embedded=intent['/DestOutputProfile']
+        if intent.get('/S')!='/GTS_PDFX' or embedded.get('/N')!=4 or embedded.get_data()!=icc: raise RuntimeError('Embedded ICC profile mismatch')
         fonts=run(['pdffonts',dst]).splitlines()[2:]
         for line in fonts:
             if line.strip() and not re.search(r'\byes\s+(yes|no)\s+(yes|no)\s+\d+\s+\d+\s*$',line): raise RuntimeError('Unembedded font')

@@ -58,3 +58,6 @@ Actual renderer-driven thumbnail gallery for the 12 editorial backgrounds, and l
 
 ## Exact vector prepress path (0.9.2)
 `tools/vector_pdf.py` validates the exported SVG allowlist and physical dimensions, renders the two faces locally via Inkscape, embeds available embeddable fonts, and assembles exact media, trim and bleed boxes via pypdf. Optional `tools/pdfx.py` then converts that vector PDF to a CMYK PDF/X-3 candidate with the supplied printer ICC. No claim of identical font rendering across operating systems or formal ISO certification. CI includes a vector fixture and ICC proof. Local images are capped in aggregate for portable projects.
+
+## ICC verification (0.9.3)
+CMYK converter now independently checks the embedded OutputIntent stream byte-for-byte against the supplied printer profile via pypdf, in addition to page boxes, page count, font embedding, PDF/X identifier and Ghostscript renderability. This is a structural preflight, not full ISO certification. Tested local fixture: 85 × 55 mm with 3 mm bleed and 5 mm crop-mark margin, 2 pages, 4 embedded font subsets, identical 187484-byte test ICC. No printer profile is distributed.
