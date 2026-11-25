@@ -27,6 +27,10 @@ with sync_playwright() as p:
     ready()
     page.wait_for_function("!!navigator.serviceWorker.controller",timeout=30000)
     expect(page.locator('#offline-status')).to_contain_text('Modo offline preparado')
+    assert page.locator('link[rel=canonical]').get_attribute('href')=='https://kutuzov-studio.vercel.app/'
+    assert page.request.get(BASE+'/sitemap.xml').ok
+    assert 'Disallow: /src/' not in page.request.get(BASE+'/robots.txt').text()
+    assert page.evaluate("async()=> !(await caches.match(new URL('/admin.html',location.origin).href))")
     health=page.request.get(BASE+'/health.json').json()
     assert health['service']=='kutuzov-studio' and health['status']=='ok' and health['commit']
     context.set_offline(True)

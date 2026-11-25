@@ -79,3 +79,5 @@ Product cards and semantic stage navigation, explicit selected-design focus, sta
 
 ## Release candidate / phases 10–11
 Local-first startup; catalogue refresh preserves active physical dimensions; personal reset clears unsaved design/history, batch prevents identity carry-over. Allowlisted static build (`npm run build`), no server functions or runtime npm dependencies, deterministic shell cache, static release health metadata, SEO metadata, privacy and security headers. Git auto-deploy disabled deliberately: release only an exact commit with all required CI jobs green. See docs/release-operations.md and docs/phase-acceptance.md. External acceptance gates remain open.
+
+The independent production baseline is https://kutuzov-studio.vercel.app (Hobby personal/non-commercial demo). Release workflow includes an independent scan proof and real offline, batch, privacy and build verification. Live health monitoring checks HTTPS headers, MIME, static release identity, sitemap and excluded paths, plus public Supabase/Edge contract; live browser regression on workflow changes/manual dispatch. See release operations for baseline details.

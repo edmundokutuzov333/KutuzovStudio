@@ -11,5 +11,5 @@
 | 08 Assets | 12 original patterns, local uploads, rights policy, private metadata curation and disabled-by-default Magnific adapter | Written provider authorization, verified zero cost, secret, origin and real provider test |
 | 09 Experience | Responsive journey, cross-engine browser flows, focus and stale-state handling | Physical iOS/Android devices, user research and formal accessibility audit |
 | 10 QA | Unit/contract, actual API, browser matrix, independent scan and prepress, offline/privacy/batch, release gate | Results must be green for exact release SHA |
-| 11 Deployment | Allowlisted static build, security headers, noindex admin, SEO, health, CI artifact, production smoke | Vercel release must be READY, monitoring origin configured; Hobby noncommercial only |
+| 11 Deployment | Allowlisted static build, security headers, noindex admin, SEO, health, CI artifact, production smoke | Vercel release must be READY and live checks pass; Hobby noncommercial only |
 Do not claim full acceptance while an external gate remains. Test fixtures are synthetic, not real user PII.

@@ -9,8 +9,10 @@ jobs:
   application:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
       - run: npm test
@@ -27,8 +29,10 @@ jobs:
   print-proof:
     runs-on: ubuntu-26.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
       - name: Install proof tools
@@ -84,8 +88,10 @@ jobs:
       PGPASSWORD: studio_ci_only
       PGDATABASE: studio
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
       - run: |
@@ -105,8 +111,10 @@ jobs:
   live-catalog:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
       - run: node tests/live-catalog.mjs
@@ -117,7 +125,9 @@ jobs:
       matrix:
         browser: [chromium, firefox, webkit]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
       - name: Install browser
         run: |
           python3 -m venv /tmp/compat
@@ -138,11 +148,15 @@ jobs:
     needs: [application, print-proof, postgres-contract, live-catalog, browser-compatibility]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
       - run: npm run build
+        env:
+          STUDIO_PUBLIC_ORIGIN: https://kutuzov-studio.vercel.app
       - name: Install browser for release artifact verification
         run: |
           python3 -m venv /tmp/release-qa
@@ -153,7 +167,7 @@ jobs:
           python3 -m http.server 8001 --directory dist > /tmp/studio-release-http.log 2>&1 &
           for i in {1..20}; do curl -fsS http://localhost:8001/health.json >/dev/null && break; sleep 1; done
           /tmp/release-qa/bin/python tests/release_browser.py
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: studio-release-${{ github.sha }}
           path: dist/

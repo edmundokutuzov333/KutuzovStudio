@@ -3,9 +3,15 @@ on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'Exact HTTPS Studio origin'
+        description: 'Exact HTTPS Studio origin (defaults to production)'
         required: false
         type: string
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/health.yml'
+      - 'tests/deployment-smoke.mjs'
+      - 'tests/deployed_browser.py'
   schedule:
     - cron: '23 6 * * *'
 permissions:
@@ -14,17 +20,32 @@ jobs:
   public-smoke:
     runs-on: ubuntu-24.04
     env:
-      STUDIO_URL: ${{ inputs.url || vars.STUDIO_PRODUCTION_URL }}
+      STUDIO_URL: ${{ inputs.url || vars.STUDIO_PRODUCTION_URL || 'https://kutuzov-studio.vercel.app' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
       - name: Verify public deployment and backend
         run: |
-          if [ -z "$STUDIO_URL" ]; then
-            echo "Deployment monitoring not configured. Set STUDIO_PRODUCTION_URL in repository Actions variables."
-            exit 1
-          fi
           node tests/deployment-smoke.mjs
           node tests/live-catalog.mjs
+  browser-smoke:
+    if: github.event_name != 'schedule'
+    needs: public-smoke
+    runs-on: ubuntu-24.04
+    env:
+      STUDIO_URL: ${{ inputs.url || vars.STUDIO_PRODUCTION_URL || 'https://kutuzov-studio.vercel.app' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Prepare browser
+        run: |
+          python3 -m venv /tmp/studio-live
+          /tmp/studio-live/bin/pip install playwright==1.51.0
+          /tmp/studio-live/bin/python -m playwright install chromium
+      - name: Verify live HTTPS user flow
+        run: /tmp/studio-live/bin/python tests/deployed_browser.py
