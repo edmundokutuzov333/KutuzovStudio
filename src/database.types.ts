@@ -143,6 +143,7 @@ export type Database = {
         Args: { expected_current: string; target: string }
         Returns: string
       }
+      studio_reserve_stock_search: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never

@@ -67,3 +67,6 @@ Duplex long/short edge and portrait/landscape sheet options, actual sheet capaci
 
 ## Editorial security (0.9.5)
 Every privileged DB call now requires live private editor membership, current Auth app_metadata, non-anonymous/non-banned user, matching JWT role and AAL2. Existing expressly authorized accounts are migrated. Revocation is immediate even with a stale token. MFA enrollment checks membership before creating factors. Curator supports idempotent metadata registration and review/reject with private audit, never file delivery. Operator setup: docs/editorial-access.md. SQL fixtures use transaction-local Auth rows and roll back.
+
+## Optional provider adapter (0.9.6)
+Deployed metadata-only Edge Function, current-editor and AAL2 checks, origin allowlist, no redirects, fixed stock search endpoint, response allowlist, atomic global 20/day quota, no automatic retries/downloads/generation. Disabled by default pending written authorization and verified search cost; no provider secret configured. Admin supports optional search to manual curation. See docs/magnific-curation.md.
