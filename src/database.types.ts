@@ -50,12 +50,42 @@ export type Database = {
         }
         Relationships: []
       }
+      studio_releases: {
+        Row: {
+          created_at: string
+          id: string
+          manifest: Json
+          published_at: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manifest: Json
+          published_at?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manifest?: Json
+          published_at?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      studio_publish_release: {
+        Args: { expected_current: string; target: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
