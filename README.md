@@ -49,3 +49,6 @@ Editorial releases reject unrecognized manifest keys both in PostgreSQL and in t
 
 ## Editorial hardening (0.8.1)
 Draft creation RPC is idempotent by content/title; unique draft index prevents duplicate retries. MFA-protected audit projection exposes only release metadata, not actor identifiers. Known original background IDs checked in PostgreSQL. Admin has structured labels/palette/collection editing, advanced JSON, audit feed, and explicit first TOTP enrollment with a manually entered secret. Provisioning the real editor account is still required; no credentials are created by the application. No real auth browser test has been run.
+
+## Experience design (0.9)
+Editorial mineral/acid design system, responsive header, product onboarding, project library disclosure, progressive editor panels, five proposal stage, explicit sample clearing, keyboard focus/reduced motion, and preview-only print guides. Preserved existing form IDs and print APIs. Native print hides shell. This is coded UI, not a user-tested or accessibility-certified product.
