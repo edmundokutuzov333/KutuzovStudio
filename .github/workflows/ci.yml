@@ -91,3 +91,21 @@ jobs:
         with:
           node-version: '22'
       - run: node tests/live-catalog.mjs
+  browser-compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install browser
+        run: |
+          python3 -m venv /tmp/compat
+          /tmp/compat/bin/pip install playwright==1.51.0
+          /tmp/compat/bin/python -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Browser end-to-end
+        run: |
+          python3 -m http.server 8000 > /tmp/studio-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://localhost:8000/ >/dev/null && break; sleep 1; done
+          /tmp/compat/bin/python tests/browser_compatibility.py ${{ matrix.browser }}
