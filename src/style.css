@@ -7,3 +7,5 @@
 #native-print{display:none}@media print{body.native-print-active>header,body.native-print-active>main,body.native-print-active>footer{display:none!important}body.native-print-active{margin:0!important;padding:0!important;background:white!important}body.native-print-active #native-print{display:block;print-color-adjust:exact;-webkit-print-color-adjust:exact}.native-page{break-after:page;margin:0;padding:0;line-height:0}.native-page:last-child{break-after:auto}.native-page svg{display:block;max-width:none;max-height:none}}
 
 #badge-fields{display:grid;gap:9px;border:1px solid #ddd;padding:12px;min-width:0}#badge-fields legend{font-weight:700;font-size:.85rem}#batch-panel{background:white;padding:20px;margin-top:24px;border-radius:12px}#batch-link{color:#244a77;text-decoration:underline}
+
+.workspace-tools{background:#fff;padding:20px;border:1px solid #dad7cf;border-radius:12px;margin-bottom:24px;display:grid;gap:12px}.workspace-tools .actions{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.workspace-tools button{align-self:end}#workspace-status{font-size:.85rem;color:#444}

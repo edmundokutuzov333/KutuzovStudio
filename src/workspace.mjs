@@ -1,0 +1,32 @@
+import {normalizeProfile,validFormat,composeDocument} from './engine.mjs';
+import {badgeFields} from './badge.mjs';
+import {templates,proposals} from './templates.mjs';
+const keys=['product','format','width','height','bleed','orientation','name','role','company','phone','email','website','address','slogan','qr','badgeKind','department','badgeId','expiry','industry','family','color','photoMode','focusX','focusY','textScale','textAlign'];
+const flags=['customColor','showPhoto','showLogo'];
+export const workspaceFields=Object.freeze([...keys,...flags]);
+const copy=v=>JSON.parse(JSON.stringify(v));
+export function validateSnapshot(input){
+ if(!input||input.version!==1||!input.fields||!validFormat(input.format))throw Error('Projecto inválido ou versão incompatível.');
+ const f={};for(const k of keys){const value=input.fields[k];if(typeof value!=='string'||value.length>200)throw Error('Campo inválido: '+k);f[k]=value}for(const k of flags){if(typeof input.fields[k]!=='boolean')throw Error('Campo inválido: '+k);f[k]=input.fields[k]}
+ if(f.product!==input.format.product||f.format!==input.format.id||!['native','horizontal','vertical'].includes(f.orientation)||!['cover','contain'].includes(f.photoMode)||!['auto','start','middle'].includes(f.textAlign)||!['general','business','creative','technology','hospitality','health'].includes(f.industry)||!/^#[0-9a-f]{6}$/i.test(f.color))throw Error('Configuração inválida.');
+ for(const [k,min,max] of [['focusX',0,100],['focusY',0,100],['textScale',75,125]])if(!/^\d+$/.test(f[k])||Number(f[k])<min||Number(f[k])>max)throw Error('Controlo inválido.');
+ if(!Number.isInteger(input.seed)||input.seed<0||input.seed>4||!proposals({family:f.family,industry:f.industry,seed:input.seed}).some(t=>t.id===input.templateId))throw Error('Proposta inválida.');
+ normalizeProfile(f);if(f.product==='badge')badgeFields(f);
+ const assets={};for(const k of ['photo','logo']){const a=input.assets?.[k]??null;if(a&&(!a.data||typeof a.data!=='string'||a.data.length>20000000||!/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(a.data)||!Number.isInteger(a.width)||!Number.isInteger(a.height)||a.width<1||a.height<1||a.width>2400||a.height>2400))throw Error('Imagem inválida.');assets[k]=a?{data:a.data,width:a.width,height:a.height}:null}
+ const format=Object.fromEntries(['id','product','label','width_mm','height_mm','bleed_mm','safe_mm','position'].map(k=>[k,input.format[k]]));
+ if(f.format==='custom'&&[Number(f.width),Number(f.height),Number(f.bleed)].some((v,i)=>v!==[format.width_mm,format.height_mm,format.bleed_mm][i]))throw Error('Dimensões inconsistentes.');
+ const p={...f};if(!f.customColor)delete p.color;composeDocument({format,profile:p,template:templates.find(t=>t.id===input.templateId),orientation:f.orientation,photo:assets.photo,logo:assets.logo,showPhoto:f.showPhoto,showLogo:f.showLogo,photoMode:f.photoMode,textScale:Number(f.textScale)/100,textAlign:f.textAlign,focusX:Number(f.focusX)/100,focusY:Number(f.focusY)/100,variation:input.seed});
+ return {version:1,fields:f,format,assets,seed:input.seed,templateId:input.templateId};
+}
+export function createHistory(limit=30){let states=[],index=-1;return {push(s){const last=states[index];if(last&&JSON.stringify(last)===JSON.stringify(s))return;states=states.slice(0,index+1);states.push(s);if(states.length>limit)states.shift();index=states.length-1},undo(){return index>0?states[--index]:null},redo(){return index<states.length-1?states[++index]:null},clear(){states=[];index=-1},get canUndo(){return index>0},get canRedo(){return index<states.length-1}}}
+let connection;
+function db(){if(!connection)connection=new Promise((resolve,reject)=>{if(!globalThis.indexedDB){reject(Error('Armazenamento local indisponível.'));return}const r=indexedDB.open('kutuzov-studio',1);r.onupgradeneeded=()=>{for(const name of ['projects','settings'])if(!r.result.objectStoreNames.contains(name))r.result.createObjectStore(name,{keyPath:'id'})};r.onsuccess=()=>{r.result.onversionchange=()=>{r.result.close();connection=null};resolve(r.result)};r.onerror=()=>reject(r.error);r.onblocked=()=>reject(Error('Fecha outras abas do Studio.'))}).catch(e=>{connection=null;throw e});return connection}
+async function tx(store,mode,action){const d=await db();return new Promise((resolve,reject)=>{const t=d.transaction(store,mode),r=action(t.objectStore(store));t.oncomplete=()=>resolve(r.result);t.onabort=()=>reject(t.error||Error('Operação cancelada.'));t.onerror=()=>reject(t.error||Error('Falha no armazenamento.'))})}
+export async function listProjects(){const rows=await tx('projects','readonly',s=>s.getAll());return rows.map(({id,title,updatedAt})=>({id,title,updatedAt})).sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))}
+export async function saveProject(title,snapshot,id=crypto.randomUUID()){title=String(title).trim();if(!title||title.length>100||!/^[a-zA-Z0-9-]{1,80}$/.test(id))throw Error('Nome ou ID inválido.');const row={id,title,updatedAt:new Date().toISOString(),snapshot:validateSnapshot(snapshot)};await tx('projects','readwrite',s=>s.put(row));return id}
+export async function loadProject(id){const row=await tx('projects','readonly',s=>s.get(id));if(!row)throw Error('Projecto não encontrado.');return {...row,snapshot:validateSnapshot(row.snapshot)}}
+export async function deleteProject(id){await tx('projects','readwrite',s=>s.delete(id))}
+export async function setting(id,value){if(arguments.length===1)return (await tx('settings','readonly',s=>s.get(id)))?.value??null;await tx('settings','readwrite',s=>s.put({id,value}));return value}
+export function brandFrom(s){const v=validateSnapshot(s),f=v.fields;return {company:f.company,website:f.website,address:f.address,slogan:f.slogan,color:f.color,customColor:f.customColor,family:f.family,logo:v.assets.logo}}
+export function portable(title,snapshot){return JSON.stringify({kind:'kutuzov-studio-project',title:String(title).slice(0,100),snapshot:validateSnapshot(snapshot)})}
+export function parsePortable(text){if(typeof text!=='string'||text.length>42000000)throw Error('Ficheiro demasiado grande.');const p=JSON.parse(text);if(p.kind!=='kutuzov-studio-project'||typeof p.title!=='string'||!p.title.trim()||p.title.length>100)throw Error('Ficheiro .kutuzov inválido.');return {title:p.title,snapshot:validateSnapshot(p.snapshot)}}

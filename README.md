@@ -27,3 +27,6 @@ A3 and A4 duplex sheet imposition, JPG with JFIF DPI metadata, portable ZIP cont
 
 ## Badge Studio (0.5)
 Private organization/event badges: type, department, internal identifier, validity and shared two-sided engine. Local CSV batch up to 50, filename-matched individual photos, unique IDs, sequential PDF export into ZIP. No identity verification, access-control system or official credentials. No barcode other than QR yet.
+
+## Workspace (0.6)
+Explicit IndexedDB project saves, portable validated version-1 .kutuzov, local brand kit, favorite families, undo/redo (12 states), service worker shell cache. No cloud PII. Saved format snapshot preserves old dimensions. Local storage is not encrypted and may be evicted; export backups. Offline requires initial successful cache install. Shared browser profile is not a security boundary.
