@@ -30,7 +30,9 @@ with sync_playwright() as p:
     ready()
     page.locator('[name=name]').fill('Ana Compatibilidade')
     ready()
-    assert 'Ana Compatibilidade' in page.evaluate("fetch(document.querySelector('#front').src).then(r=>r.text())")
+    name,svg=download('#download-front')
+    assert name.endswith('.svg') and b'Ana Compatibilidade' in svg
+    page.wait_for_function("document.querySelector('#front').complete && document.querySelector('#front').naturalWidth > 0")
     for width in (390,320,1440):
         page.set_viewport_size({'width':width,'height':900})
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth+2'),f'Overflow {width}px'
