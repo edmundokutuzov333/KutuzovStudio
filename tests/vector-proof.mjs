@@ -1,0 +1,4 @@
+import {writeFileSync} from 'node:fs';import {composeDocument} from '../src/engine.mjs';import {templates} from '../src/templates.mjs';import {builtIn} from '../src/catalog.mjs';import {vectorPage} from '../src/native-print.mjs';
+const d=composeDocument({format:builtIn[0],template:templates[0],profile:{name:'Ana João',role:'Designer',company:'Studio'}});
+const css='@page{size:101mm 71mm;margin:0}body{margin:0;padding:0;background:white}.native-page{break-after:page;margin:0;padding:0;line-height:0;print-color-adjust:exact;-webkit-print-color-adjust:exact}.native-page:last-child{break-after:auto}.native-page svg{display:block;max-width:none;max-height:none}';
+writeFileSync(process.argv[2],'<!doctype html><html><head><meta charset="utf-8"><style>'+css+'</style></head><body>'+['front','back'].map(side=>'<div class="native-page">'+vectorPage(d,side,true)+'</div>').join('')+'</body></html>');

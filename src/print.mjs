@@ -14,11 +14,11 @@ export function printGeometry(g,marks=false){
  const m=marks?5:0,W=w+2*(b+m),H=h+2*(b+m);
  return {media:[0,0,W*PT,H*PT],trim:[(m+b)*PT,(m+b)*PT,(m+b+w)*PT,(m+b+h)*PT],bleed:[m*PT,m*PT,(m+w+2*b)*PT,(m+h+2*b)*PT],placement:{x:m*PT,y:m*PT,w:(w+2*b)*PT,h:(h+2*b)*PT},marks};
 }
-export function sheetGeometry(g){
+export function sheetGeometry(g,paper='A4'){
  printGeometry(g);
- const W=210,H=297,margin=10,gap=6,aw=g.w+2*g.b,ah=g.h+2*g.b;
+ if(!['A4','A3'].includes(paper))throw Error('Formato de folha inválido.');const [W,H]=paper==='A3'?[297,420]:[210,297],margin=10,gap=6,aw=g.w+2*g.b,ah=g.h+2*g.b;
  const cols=Math.floor((W-2*margin+gap)/(aw+gap)),rows=Math.floor((H-2*margin+gap)/(ah+gap));
- if(cols<1||rows<1)throw Error('O formato não cabe numa folha A4 com margens.');
+ if(cols<1||rows<1)throw Error('O formato não cabe numa folha '+paper+' com margens.');
  const startX=(W-(cols*aw+(cols-1)*gap))/2,startY=(H-(rows*ah+(rows-1)*gap))/2;
  const front=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)front.push({x:(startX+c*(aw+gap))*PT,y:(startY+r*(ah+gap))*PT,w:aw*PT,h:ah*PT});
  const back=front.map(p=>({...p,x:W*PT-p.x-p.w}));
@@ -44,7 +44,7 @@ export function encodePdf(pages){
  const ids=[];
  for(const page of pages){
   const {image,media,trim,bleed,placements,marks,g}=page;
-  if(!Array.isArray(media)||media.length!==4||!media.every(Number.isFinite)||media[0]!==0||media[1]!==0||media[2]<=0||media[3]<=0||!Array.isArray(placements)||!placements.length||placements.length>100||placements.some(p=>![p.x,p.y,p.w,p.h].every(Number.isFinite)||p.x<-.00001||p.y<-.00001||p.w<=0||p.h<=0||p.x+p.w>media[2]+.00001||p.y+p.h>media[3]+.00001))throw Error('Página PDF inválida.');
+  if(!Array.isArray(media)||media.length!==4||!media.every(Number.isFinite)||media[0]!==0||media[1]!==0||media[2]<=0||media[3]<=0||!Array.isArray(placements)||!placements.length||placements.length>200||placements.some(p=>![p.x,p.y,p.w,p.h].every(Number.isFinite)||p.x<-.00001||p.y<-.00001||p.w<=0||p.h<=0||p.x+p.w>media[2]+.00001||p.y+p.h>media[3]+.00001))throw Error('Página PDF inválida.');
   if(!(image.bytes instanceof Uint8Array)||!image.bytes.length||!Number.isInteger(image.width)||!Number.isInteger(image.height)||image.width<1||image.height<1||image.width*image.height>MAX_PIXELS)throw Error('Imagem PDF inválida.');
   const img=add(stream('/Type /XObject /Subtype /Image /Width '+image.width+' /Height '+image.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode',image.bytes));
   let commands='';for(const p of placements){commands+='q '+n(p.w)+' 0 0 '+n(p.h)+' '+n(p.x)+' '+n(p.y)+' cm /Im0 Do Q\n';if(marks)commands+=cutMarks(p,g)}
@@ -61,7 +61,7 @@ async function rasterize(doc,side,dpi){
  const {width,height}=rasterDimensions(doc.geometry,dpi),url=URL.createObjectURL(new Blob([svgDocument(doc,side,true)],{type:'image/svg+xml;charset=utf-8'}));
  const c=document.createElement('canvas');try{const img=new Image();img.src=url;await img.decode();c.width=width;c.height=height;const ctx=c.getContext('2d',{alpha:false,willReadFrequently:true});if(!ctx)throw Error('Canvas indisponível.');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,height);ctx.drawImage(img,0,0,width,height);return {canvas:c,ctx,width,height};}catch(e){c.width=1;c.height=1;throw e}finally{URL.revokeObjectURL(url)}
 }
-function crc32(bytes){let c=0xffffffff;for(const b of bytes){c^=b;for(let i=0;i<8;i++)c=(c>>>1)^((c&1)?0xedb88320:0)}return (c^0xffffffff)>>>0}
+export function crc32(bytes){let c=0xffffffff;for(const b of bytes){c^=b;for(let i=0;i<8;i++)c=(c>>>1)^((c&1)?0xedb88320:0)}return (c^0xffffffff)>>>0}
 export function pngWithDpi(input,dpi){
  if(![300,600].includes(dpi)||input.length<33||[137,80,78,71,13,10,26,10].some((v,i)=>input[i]!==v))throw Error('PNG inválido.');
  const phys=new Uint8Array(21),dv=new DataView(phys.buffer);dv.setUint32(0,9);phys.set(enc('pHYs'),4);const ppm=Math.round(dpi/0.0254);dv.setUint32(8,ppm);dv.setUint32(12,ppm);phys[16]=1;dv.setUint32(17,crc32(phys.subarray(4,17)));
@@ -76,8 +76,23 @@ async function rgbImage(doc,side,dpi){
  if(typeof CompressionStream!=='function')throw Error('O navegador não suporta compressão PDF. Usa um navegador actualizado ou exporta PNG.');
  const r=await rasterize(doc,side,dpi);try{const rgba=r.ctx.getImageData(0,0,r.width,r.height).data,rgb=new Uint8Array(r.width*r.height*3);for(let i=0,j=0;i<rgba.length;i+=4){rgb[j++]=rgba[i];rgb[j++]=rgba[i+1];rgb[j++]=rgba[i+2]}const compressed=await new Response(new Blob([rgb]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer();return {width:r.width,height:r.height,bytes:new Uint8Array(compressed)}}finally{r.canvas.width=1;r.canvas.height=1}
 }
-export async function exportPdf(doc,{dpi=300,marks=true,sheet=false}={}){
- rasterDimensions(doc.geometry,dpi);const g=doc.geometry,geo=sheet?sheetGeometry(g):printGeometry(g,marks),pages=[];
+export async function exportPdf(doc,{dpi=300,marks=true,sheet=false,paper='A4'}={}){
+ rasterDimensions(doc.geometry,dpi);const g=doc.geometry,geo=sheet?sheetGeometry(g,paper):printGeometry(g,marks),pages=[];
  for(const side of ['front','back']){const image=await rgbImage(doc,side,dpi);pages.push({image,media:geo.media,trim:geo.trim,bleed:geo.bleed,placements:sheet?geo[side]:[geo.placement],marks:sheet||marks,g})}
  return new Blob([encodePdf(pages)],{type:'application/pdf'});
+}
+
+export function jpegWithDpi(data,dpi){
+ if(![300,600].includes(dpi)||data.length<12||data[0]!==255||data[1]!==216)throw Error('JPEG inválido.');
+ const jfif=new Uint8Array([255,224,0,16,74,70,73,70,0,1,1,1,0,0,0,0,0,0]);const v=new DataView(jfif.buffer);v.setUint16(12,dpi);v.setUint16(14,dpi);
+ let start=2;if(data[2]===255&&data[3]===224&&data[6]===74&&data[7]===70&&data[8]===73&&data[9]===70&&data[10]===0){start=4+new DataView(data.buffer,data.byteOffset,data.byteLength).getUint16(4);if(start>data.length||start<20)throw Error('JPEG truncado.')}
+ return concat([data.subarray(0,2),jfif,data.subarray(start)]);
+}
+export async function exportJpg(doc,side,dpi){
+ const r=await rasterize(doc,side,dpi);try{const blob=await new Promise((resolve,reject)=>r.canvas.toBlob(b=>b?resolve(b):reject(Error('Falha JPG.')),'image/jpeg',.98));return new Blob([jpegWithDpi(new Uint8Array(await blob.arrayBuffer()),dpi)],{type:'image/jpeg'});}finally{r.canvas.width=1;r.canvas.height=1}
+}
+export function imageResolutionWarnings(doc,dpi){
+ if(![300,600].includes(dpi))throw Error('Resolução inválida.');const warnings=[];
+ for(const [side,nodes] of Object.entries(doc.sides))for(const n of nodes)if(n.kind==='image'){const scale=n.mode==='cover'?Math.max(n.w/n.asset.width,n.h/n.asset.height):Math.min(n.w/n.asset.width,n.h/n.asset.height),effective=Math.floor(25.4/scale);if(effective<dpi)warnings.push((side==='front'?'Frente':'Verso')+': imagem com '+effective+' DPI efectivos (pedido: '+dpi+').')}
+ return [...new Set(warnings)];
 }

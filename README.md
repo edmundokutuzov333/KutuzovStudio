@@ -1,4 +1,4 @@
-# Kutuzov Studio 0.4.1
+# Kutuzov Studio 0.4.2
 Independent main-only repository. Static ES modules; zero runtime dependencies. Node 22, Python 3. `npm test`; `npm run dev`.
 
 ## Implemented scope
@@ -21,3 +21,6 @@ Local lossless RGB raster PDF (Flate-compressed), individual two-page PDF with e
 Export revision tokens prevent stale asynchronous downloads, pending image decoding blocks export, and quality warnings require acknowledgment. Native browser printing uses the same SVG document and physical page geometry; browser PDF font embedding, trim/bleed boxes and colour management are not guaranteed by this option. Direct PDF remains lossless RGB with explicit trim/bleed boxes. PDF/X, validated ICC CMYK and physical proofs are not certified. Catalog decoder accepts PostgreSQL decimal strings and rejects redirects/credentials. Live schema generated types match checked-in types; no backend schema change necessary.
 
 Nested SVG viewports are expressed in the outer millimetre-coordinate user units (not nested CSS mm); native printing waits for embedded images and font readiness. Stale print requests are cancelled before invoking the browser dialog.
+
+## Additional print formats (0.4.2)
+A3 and A4 duplex sheet imposition, JPG with JFIF DPI metadata, portable ZIP containing PDF/PNG/SVG and printer instructions, and DPI-specific preflight warnings. Native vector print fixture is checked in CI with Chromium and Poppler. The direct PDF is RGB raster; native browser PDF has browser-dependent page rounding and lacks explicit trim/bleed metadata. No PDF/X or CMYK certification.
