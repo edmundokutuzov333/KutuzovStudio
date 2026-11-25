@@ -40,6 +40,9 @@ def convert(source, profile, output, condition):
     if icc[12:16]!=b'prtr' or icc[16:20]!=b'CMYK' or icc[36:40]!=b'acsp' or int.from_bytes(icc[:4],'big')!=len(icc): raise ValueError('Expected a CMYK printer ICC profile')
     for tool in ('gs','pdfinfo','pdffonts'):
         if not shutil.which(tool): raise RuntimeError(f'Install {tool} first')
+    version=re.match(r'^(\d+)\.(\d+)',run(['gs','--version']).strip())
+    if not version: raise RuntimeError('Cannot determine Ghostscript version')
+    pdfx_option='-dPDFX=3' if tuple(map(int,version.groups())) >= (10,5) else '-dPDFX'
     pages,before=inspect(source)
     with tempfile.TemporaryDirectory(prefix='studio-pdfx-') as temp:
         temp=Path(temp); dst=temp/'candidate.pdf'; prefix=temp/'intent.ps'; iccpath=temp/'output.icc'; iccpath.write_bytes(icc)
@@ -54,7 +57,7 @@ def convert(source, profile, output, condition):
 [{{OutputIntent_PDFX}} << /Type /OutputIntent /S /GTS_PDFX /OutputConditionIdentifier {ps(condition)} /Info {ps(condition)} /DestOutputProfile {{icc_PDFX}} >> /PUT pdfmark
 [{{Catalog}} << /OutputIntents [{{OutputIntent_PDFX}}] >> /PUT pdfmark
 ''',encoding='ascii')
-        run(['gs','-dSAFER','-dPDFX=3','-dBATCH','-dNOPAUSE','-dEmbedAllFonts=true','-dSubsetFonts=true','-dAutoRotatePages=/None','-dDownsampleColorImages=false','-dDownsampleGrayImages=false','-dDownsampleMonoImages=false','-sColorConversionStrategy=CMYK',f'-sOutputICCProfile={iccpath}',f'--permit-file-read={iccpath}','-sDEVICE=pdfwrite',f'-sOutputFile={dst}',prefix,source])
+        run(['gs','-dSAFER',pdfx_option,'-dBATCH','-dNOPAUSE','-dEmbedAllFonts=true','-dSubsetFonts=true','-dAutoRotatePages=/None','-dDownsampleColorImages=false','-dDownsampleGrayImages=false','-dDownsampleMonoImages=false','-sColorConversionStrategy=CMYK',f'-sOutputICCProfile={iccpath}',f'--permit-file-read={iccpath}','-sDEVICE=pdfwrite',f'-sOutputFile={dst}',prefix,source])
         actual,after=inspect(dst)
         if actual!=pages or any(max(abs(a-b) for a,b in zip(before[k],after[k]))>.08 for k in before): raise RuntimeError('Page geometry changed')
         info=run(['pdfinfo','-meta',dst])+run(['pdfinfo','-box',dst])
