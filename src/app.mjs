@@ -32,12 +32,13 @@ for(const k of ['photo','logo']){field(k).addEventListener('change',async()=>{co
 window.addEventListener('pagehide',()=>{clearUrls(urls);clearUrls(detailUrls)});
 setFormats();update();
 
-const printButtons=['download-pdf','download-sheet','download-png-front','download-png-back'].map($);let exporting=false;
+const printButtons=['download-pdf','download-sheet','download-png-front','download-png-back'].map($);let exporting=false,printUrl=null;
+window.addEventListener('pagehide',e=>{if(!e.persisted&&printUrl)URL.revokeObjectURL(printUrl)});
 async function runExport(kind,side){
  if(exporting||!chosen)return;const item=chosen,dpi=Number($('print-dpi').value),marks=$('print-marks').checked;
  exporting=true;printButtons.forEach(b=>b.disabled=true);$('print-status').textContent='A preparar ficheiro localmente…';
  try{const sheet=kind==='sheet';const blob=kind==='png'?await exportPng(item.doc,side,dpi):await exportPdf(item.doc,{dpi,marks,sheet});
- const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='kutuzov-'+item.template.id+'-'+(sheet?'a4':kind==='png'?side:'duplex')+'-'+dpi+'dpi.'+(kind==='png'?'png':'pdf');a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
+ if(printUrl)URL.revokeObjectURL(printUrl);printUrl=URL.createObjectURL(blob);const a=$('print-download-link');a.href=printUrl;a.download='kutuzov-'+item.template.id+'-'+(sheet?'a4':kind==='png'?side:'duplex')+'-'+dpi+'dpi.'+(kind==='png'?'png':'pdf');a.hidden=false;a.click();
  $('print-status').textContent=sheet?'PDF A4 preparado: '+sheetGeometry(item.doc.geometry).count+' cartões por face. Imprime a 100%, duplex pela margem longa.':'Ficheiro preparado. Verifica a escala e os requisitos da gráfica.';
  }catch(e){$('print-status').textContent=e instanceof Error?e.message:'Falha na exportação.'}finally{exporting=false;printButtons.forEach(b=>b.disabled=false)}
 }
