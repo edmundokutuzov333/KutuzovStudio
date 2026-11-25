@@ -55,3 +55,6 @@ Editorial mineral/acid design system, responsive header, product onboarding, pro
 
 ## Asset & UI hardening (0.9.1)
 Actual renderer-driven thumbnail gallery for the 12 editorial backgrounds, and local-only user-owned image backgrounds after a rights confirmation. Original/third-party images are never downloaded by the public Studio. User-supplied background remains part of local project snapshots and exports with a legibility wash; permission is the user's responsibility. Admin MFA challenges are issued at verification time, and active publication is fetched separately from paginated recent versions.
+
+## Exact vector prepress path (0.9.2)
+`tools/vector_pdf.py` validates the exported SVG allowlist and physical dimensions, renders the two faces locally via Inkscape, embeds available embeddable fonts, and assembles exact media, trim and bleed boxes via pypdf. Optional `tools/pdfx.py` then converts that vector PDF to a CMYK PDF/X-3 candidate with the supplied printer ICC. No claim of identical font rendering across operating systems or formal ISO certification. CI includes a vector fixture and ICC proof. Local images are capped in aggregate for portable projects.

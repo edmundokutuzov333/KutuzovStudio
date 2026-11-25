@@ -13,7 +13,9 @@ jobs:
       - run: npm test
       - run: for f in src/*.mjs tests/*.mjs sw.js; do node --check "$f"; done
       - name: Install proof tools
-        run: sudo apt-get update && sudo apt-get install -y ghostscript poppler-utils
+        run: sudo apt-get update && sudo apt-get install -y ghostscript poppler-utils inkscape
+      - name: Install vector PDF dependency
+        run: python3 -m venv /tmp/studio-venv && /tmp/studio-venv/bin/pip install pypdf==5.9.0
       - name: Browser smoke
         run: |
           python3 -m http.server 8000 > /tmp/studio-http.log 2>&1 &
@@ -33,6 +35,13 @@ jobs:
           profile=$(find /usr/share/color/icc -name default_cmyk.icc -print -quit)
           test -n "$profile"
           python3 tools/pdfx.py /tmp/studio-rgb.pdf "$profile" /tmp/studio-cmyk.pdf --condition 'CI SWOP test only'
+      - name: Exact vector PDF and ICC conversion
+        run: |
+          node tests/vector-cli-fixture.mjs /tmp/studio-vector-source
+          /tmp/studio-venv/bin/python tools/vector_pdf.py /tmp/studio-vector-source/front.svg /tmp/studio-vector-source/back.svg /tmp/studio-vector-source/PRINT-SPEC.json /tmp/studio-vector-exact.pdf
+          pdftotext /tmp/studio-vector-exact.pdf - | grep -F 'Ana João'
+          profile=$(find /usr/share/color/icc -name default_cmyk.icc -print -quit)
+          python3 tools/pdfx.py /tmp/studio-vector-exact.pdf "$profile" /tmp/studio-vector-cmyk.pdf --condition 'CI SWOP test only'
   postgres-contract:
     runs-on: ubuntu-latest
     services:

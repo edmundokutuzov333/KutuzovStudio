@@ -81,7 +81,7 @@ export function svgDocument(doc,side='front',includeBleed=true){
   if(n.kind==='text')return '<text x="'+n.x+'" y="'+n.y+'" font-family="'+n.font+'" font-size="'+n.size.toFixed(4)+'" font-weight="'+n.weight+'" fill="'+n.fill+'" text-anchor="'+n.align+'">'+escapeXml(n.value)+'</text>';
   if(n.kind==='barcode')return code39Svg(n.value,n.x,n.y,n.w,n.h);
   if(n.kind==='qr')return qrSvg(n.value,n.x,n.y,n.size);
-  if(n.kind==='image'){const id='image-'+(++count),a=n.asset,k=n.mode==='cover'?Math.max(n.w/a.width,n.h/a.height):Math.min(n.w/a.width,n.h/a.height),iw=a.width*k,ih=a.height*k,x=n.x+(n.w-iw)*n.focusX,y=n.y+(n.h-ih)*n.focusY;return '<defs><clipPath id="'+id+'"><rect x="'+n.x+'" y="'+n.y+'" width="'+n.w+'" height="'+n.h+'"/></clipPath></defs><image href="'+a.data+'" x="'+x+'" y="'+y+'" width="'+iw+'" height="'+ih+'" clip-path="url(#'+id+')" preserveAspectRatio="none"/>'}
+  if(n.kind==='image'){const id=side+'-image-'+(++count),a=n.asset,k=n.mode==='cover'?Math.max(n.w/a.width,n.h/a.height):Math.min(n.w/a.width,n.h/a.height),iw=a.width*k,ih=a.height*k,x=n.x+(n.w-iw)*n.focusX,y=n.y+(n.h-ih)*n.focusY;return '<defs><clipPath id="'+id+'"><rect x="'+n.x+'" y="'+n.y+'" width="'+n.w+'" height="'+n.h+'"/></clipPath></defs><image href="'+a.data+'" x="'+x+'" y="'+y+'" width="'+iw+'" height="'+ih+'" clip-path="url(#'+id+')" preserveAspectRatio="none"/>'}
   throw Error('Unknown node');
  }).join('');
  return '<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'mm" height="'+H+'mm" viewBox="'+(-b)+' '+(-b)+' '+W+' '+H+'" role="img">'+markup+'</svg>';
