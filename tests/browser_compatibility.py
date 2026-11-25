@@ -1,5 +1,5 @@
 """Real browser compatibility: actual inputs, downloads, local persistence and layout."""
-import sys, struct, zlib, io, zipfile
+import sys, struct, zlib, io, zipfile, time
 from playwright.sync_api import sync_playwright, expect
 
 def png_fixture():
@@ -32,7 +32,10 @@ with sync_playwright() as p:
     ready()
     name,svg=download('#download-front')
     assert name.endswith('.svg') and b'Ana Compatibilidade' in svg
-    page.wait_for_function("document.querySelector('#front').complete && document.querySelector('#front').naturalWidth > 0")
+    deadline=time.monotonic()+30
+    while not page.evaluate("() => {const im=document.querySelector('#front');return im.complete && im.naturalWidth>0}"):
+        assert time.monotonic()<deadline,'Preview image did not decode'
+        time.sleep(.1)
     for width in (390,320,1440):
         page.set_viewport_size({'width':width,'height':900})
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth+2'),f'Overflow {width}px'

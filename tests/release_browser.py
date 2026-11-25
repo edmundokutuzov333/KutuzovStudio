@@ -25,8 +25,11 @@ with sync_playwright() as p:
         assert d.failure() is None,d.failure()
         return d.suggested_filename,d.path().read_bytes()
     ready()
-    page.wait_for_function("!!navigator.serviceWorker.controller",timeout=30000)
-    expect(page.locator('#offline-status')).to_contain_text('Modo offline preparado')
+    expect(page.locator('#offline-status')).to_contain_text('Modo offline preparado',timeout=30000)
+    deadline=time.monotonic()+30
+    while not page.evaluate("() => Boolean(navigator.serviceWorker.controller)"):
+        assert time.monotonic()<deadline,'Offline service worker did not claim the page'
+        time.sleep(.1)
     assert page.locator('link[rel=canonical]').get_attribute('href')=='https://kutuzov-studio.vercel.app/'
     assert page.request.get(BASE+'/sitemap.xml').ok
     assert 'Disallow: /src/' not in page.request.get(BASE+'/robots.txt').text()
