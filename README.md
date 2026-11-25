@@ -9,3 +9,5 @@ Dedicated Supabase project remains blocked by the two active free project quota 
 
 ## Quality
 Node tests cover geometry, templates, QR, escaping, layout and mocked catalog. CI executes tests and syntax checks. Browser and real print testing are separate gates. No portfolio changes.
+
+Browser smoke is included in CI. Public remote configuration accepts only HTTPS *.supabase.co and sb_publishable keys. `src/catalog.types.d.ts` is a hand-authored contract, not types generated from a live database.

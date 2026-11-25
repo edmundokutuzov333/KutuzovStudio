@@ -1,9 +1,9 @@
 // ISO/IEC 18004: QR Model 2, version 5-L, byte mode, mask 0.
 export function qrMatrix(value) {
   const bytes=new TextEncoder().encode(value);
-  if(!bytes.length||bytes.length>106)throw Error('QR: máximo 106 bytes UTF-8.');
+  const utf8=bytes.some(x=>x>=128);if(!bytes.length||bytes.length>(utf8?105:106))throw Error('QR: máximo 106 bytes ASCII ou 105 bytes UTF-8.');
   const bits=[];const add=(n,k)=>{for(let i=k-1;i>=0;i--)bits.push(n>>>i&1)};
-  add(4,4);add(bytes.length,8);for(const b of bytes)add(b,8);
+  if(utf8){add(7,4);add(26,8)}add(4,4);add(bytes.length,8);for(const b of bytes)add(b,8);
   add(0,Math.min(4,864-bits.length));while(bits.length%8)bits.push(0);
   const data=[];for(let i=0;i<bits.length;i+=8)data.push(bits.slice(i,i+8).reduce((n,b)=>2*n+b,0));
   for(let i=0;data.length<108;i++)data.push(i%2?17:236);
