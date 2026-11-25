@@ -1,4 +1,4 @@
-name: Foundation CI
+name: Studio CI
 on: [push, workflow_dispatch]
 permissions:
   contents: read
@@ -11,4 +11,4 @@ jobs:
         with:
           node-version: '22'
       - run: npm test
-      - run: node --check src/app.mjs
+      - run: for f in src/*.mjs; do node --check "$f"; done
