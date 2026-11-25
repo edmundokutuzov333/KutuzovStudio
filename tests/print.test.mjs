@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {deflateSync} from 'node:zlib';
-import {rasterDimensions,printGeometry,sheetGeometry,encodePdf,pngWithDpi,imageResolutionWarnings,jpegWithDpi} from '../src/print.mjs';
+import {deflateSync,inflateSync} from 'node:zlib';
+import {rasterDimensions,printGeometry,sheetGeometry,encodePdf,pngWithDpi,imageResolutionWarnings,jpegWithDpi,zlibStored} from '../src/print.mjs';
 const g={w:85,h:55,b:3,s:3};
 test('dimensions and limits',()=>{assert.deepEqual(rasterDimensions(g,300),{width:1075,height:720});assert.deepEqual(rasterDimensions(g,600),{width:2150,height:1441});assert.throws(()=>rasterDimensions(g,72));assert.throws(()=>rasterDimensions({w:200,h:200,b:5},600));});
 test('physical page geometry',()=>{const p=printGeometry(g,true),mm=72/25.4;assert.ok(Math.abs((p.trim[2]-p.trim[0])/mm-85)<1e-9);assert.ok(Math.abs((p.bleed[2]-p.bleed[0])/mm-91)<1e-9);assert.ok(Math.abs(p.media[2]/mm-101)<1e-9);});
@@ -13,3 +13,7 @@ test('PDF rejects out-of-page placements',()=>{const p=printGeometry(g);const im
 
 test('A3 imposition, DPI-dependent image warning',()=>{const p=sheetGeometry(g,'A3');assert.equal(p.count,12);assert.throws(()=>sheetGeometry(g,'A2'));const doc={sides:{front:[{kind:'image',w:25.4,h:25.4,mode:'cover',asset:{width:450,height:450}}],back:[]}};assert.equal(imageResolutionWarnings(doc,300).length,0);assert.equal(imageResolutionWarnings(doc,600).length,1);});
 test('JPEG JFIF density replacement',()=>{const fixture=new Uint8Array([255,216,255,219,0,8,0,1,2,3,4,5,255,217]);const b=jpegWithDpi(fixture,300),c=jpegWithDpi(b,600),v=new DataView(c.buffer);assert.equal(b.length,c.length);assert.equal(v.getUint16(14),600);assert.equal(v.getUint16(16),600);assert.equal(c[13],1);});
+
+test('zlib fallback round trips zero, boundary and multiple stored blocks',()=>{for(const length of [0,1,65535,65536,196610]){const x=Uint8Array.from({length},(_,i)=>i%251);assert.deepEqual(new Uint8Array(inflateSync(zlibStored(x))),x)}});
+test('sheet duplex edge and orientation geometries',()=>{for(const paper of ['A4','A3'])for(const orientation of ['portrait','landscape'])for(const flip of ['long','short']){const p=sheetGeometry(g,paper,flip,orientation),mirrorX=(orientation==='portrait')===(flip==='long');assert.ok(p.count>0);for(let i=0;i<p.count;i++){const f=p.front[i],b=p.back[i];assert.ok(Math.abs(mirrorX?f.x+b.x+f.w-p.media[2]:f.y+b.y+f.h-p.media[3])<1e-8);assert.equal(mirrorX?f.y:f.x,mirrorX?b.y:b.x)}}assert.throws(()=>sheetGeometry(g,'A4','unknown'));});
+test('PDF rejects inverted boxes and trim outside bleed',()=>{const p=printGeometry(g),image={width:1,height:1,bytes:new Uint8Array([1])};const page={image,media:p.media,placements:[p.placement],g};assert.throws(()=>encodePdf([{...page,trim:[0,0,-1,1]}]));assert.throws(()=>encodePdf([{...page,trim:p.media,bleed:[2,2,3,3]}]));});

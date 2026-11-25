@@ -1,3 +1,4 @@
+import {productionOptions} from './preflight.mjs';
 import {backgrounds} from './backgrounds.mjs';
 import {previewSvg} from './preview.mjs';
 import {loadEditorial} from './editorial.mjs';
@@ -29,7 +30,7 @@ function update(){clearTimeout(timer);error.textContent='';$('notice').textConte
  for(const item of docs){const article=document.createElement('article'),preview=document.createElement('img'),title=document.createElement('h3'),button=document.createElement('button');preview.alt='Frente · '+item.template.family.label;preview.src=imgUrl(item.doc,'front',urls);title.textContent=item.template.family.label+' / '+item.template.layout;button.type='button';button.dataset.id=item.template.id;button.textContent='Seleccionar';button.addEventListener('click',()=>select(item.template.id));article.append(preview,title,button);grid.append(article)}
  select(docs.some(d=>d.template.id===selectedId)?selectedId:docs[0].template.id);
  }catch(e){error.textContent=e instanceof Error?e.message:'Não foi possível criar os designs.'}}
-function updateWarnings(item=chosen){if(!item)return;const warnings=[...new Set([...item.doc.warnings,...imageResolutionWarnings(item.doc,Number($('print-dpi').value))])];$('warnings').textContent=warnings.length?'Verificação: '+warnings.join(' '):'Sem alertas de dimensão ou resolução na análise inicial.';$('preflight-confirm').hidden=!warnings.length}
+function updateWarnings(item=chosen){if(!item)return;updatePrintOptions(item);const warnings=[...new Set([...item.doc.warnings,...imageResolutionWarnings(item.doc,Number($('print-dpi').value))])];$('warnings').textContent=warnings.length?'Verificação: '+warnings.join(' '):'Sem alertas de dimensão ou resolução na análise inicial.';$('preflight-confirm').hidden=!warnings.length}
 function approved(){if(!chosen||pendingAssets.size)return false;if(!$('preflight-confirm').hidden&&!$('accept-warnings').checked){$('print-status').textContent='Confirma os alertas de qualidade antes de exportar.';$('accept-warnings').focus();return false}return true}
 function download(side){if(!approved())return;const data=svgDocument(chosen.doc,side,true),u=URL.createObjectURL(new Blob([data],{type:'image/svg+xml;charset=utf-8'})),a=document.createElement('a');a.href=u;a.download='kutuzov-'+chosen.template.id+'-'+side+'.svg';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000);$('notice').textContent='Download solicitado: '+side;}
 $('download-front').addEventListener('click',()=>download('front'));$('download-back').addEventListener('click',()=>download('back'));
@@ -43,17 +44,17 @@ window.addEventListener('pagehide',e=>{if(!e.persisted){clearUrls(urls);clearUrl
 const printButtons=['download-pdf','download-sheet','download-sheet-a3','download-zip','download-png-front','download-png-back','download-jpg-front','download-jpg-back'].map($);
 window.addEventListener('pagehide',e=>{if(!e.persisted){if(printUrl)URL.revokeObjectURL(printUrl);if(batchUrl)URL.revokeObjectURL(batchUrl)}});
 async function runExport(kind,side){
- if(exporting||batchRunning||!approved())return;const item=chosen,started=revision,dpi=Number($('print-dpi').value),marks=$('print-marks').checked;
+ if(exporting||batchRunning||!approved())return;const item=chosen,started=revision,dpi=Number($('print-dpi').value),marks=$('print-marks').checked,flip=$('sheet-flip').value,sheetOrientation=$('sheet-orientation').value;
  exporting=true;printButtons.forEach(b=>b.disabled=true);$('print-status').textContent='A preparar ficheiro localmente…';
- try{const sheet=kind==='sheet'||kind==='sheet-a3',paper=kind==='sheet-a3'?'A3':'A4';const blob=kind==='png'?await exportPng(item.doc,side,dpi):kind==='jpg'?await exportJpg(item.doc,side,dpi):kind==='zip'?await exportPackage(item.doc,{dpi,marks}):await exportPdf(item.doc,{dpi,marks,sheet,paper});
+ try{const sheet=kind==='sheet'||kind==='sheet-a3',paper=kind==='sheet-a3'?'A3':'A4';const blob=kind==='png'?await exportPng(item.doc,side,dpi):kind==='jpg'?await exportJpg(item.doc,side,dpi):kind==='zip'?await exportPackage(item.doc,{dpi,marks}):await exportPdf(item.doc,{dpi,marks,sheet,paper,flip,sheetOrientation});
  if(started!==revision)return;if(printUrl)URL.revokeObjectURL(printUrl);printUrl=URL.createObjectURL(blob);const a=$('print-download-link');a.href=printUrl;a.download='kutuzov-'+item.template.id+'-'+(sheet?paper.toLowerCase():['png','jpg'].includes(kind)?side:kind==='zip'?'package':'duplex')+'-'+dpi+'dpi.'+(['png','jpg','zip'].includes(kind)?kind:'pdf');a.hidden=false;a.click();
- $('print-status').textContent=sheet?'PDF '+paper+' preparado: '+sheetGeometry(item.doc.geometry,paper).count+' cartões por face. Imprime a 100%, duplex pela margem longa.':'Ficheiro preparado. Verifica a escala e os requisitos da gráfica.';
- }catch(e){if(started===revision)$('print-status').textContent=e instanceof Error?e.message:'Falha na exportação.'}finally{exporting=false;printButtons.forEach(b=>b.disabled=false)}
+ $('print-status').textContent=sheet?'PDF '+paper+' preparado: '+sheetGeometry(item.doc.geometry,paper,flip,sheetOrientation).count+' cartões por face. Imprime a 100%, duplex pela '+(flip==='long'?'margem longa.':'margem curta.'):'Ficheiro preparado. Verifica a escala e os requisitos da gráfica.';
+ }catch(e){if(started===revision)$('print-status').textContent=e instanceof Error?e.message:'Falha na exportação.'}finally{exporting=false;if(chosen)updatePrintOptions(chosen)}
 }
 $('download-pdf').addEventListener('click',()=>runExport('pdf'));$('download-sheet').addEventListener('click',()=>runExport('sheet'));$('download-png-front').addEventListener('click',()=>runExport('png','front'));$('download-png-back').addEventListener('click',()=>runExport('png','back'));
 
 $('native-print-button').addEventListener('click',async()=>{if(exporting||batchRunning||!approved())return;const started=revision;exporting=true;$('native-print-button').disabled=true;try{await nativePrint(chosen.doc,$('print-marks').checked,()=>revision===started)}catch(e){if(revision===started)$('print-status').textContent=e.message}finally{exporting=false;$('native-print-button').disabled=false}});
-for(const id of ['print-dpi','print-marks'])$(id).addEventListener('change',()=>{clearPrint();updateWarnings()});
+for(const id of ['print-dpi','print-marks','sheet-orientation','sheet-flip'])$(id).addEventListener('change',()=>{clearPrint();updateWarnings()});
 $('download-sheet-a3').addEventListener('click',()=>runExport('sheet-a3'));$('download-zip').addEventListener('click',()=>runExport('zip'));$('download-jpg-front').addEventListener('click',()=>runExport('jpg','front'));$('download-jpg-back').addEventListener('click',()=>runExport('jpg','back'));
 
 function clearBatch(){batchRevision++;if(batchUrl){URL.revokeObjectURL(batchUrl);batchUrl=null}const a=$('batch-link');a.hidden=true;a.removeAttribute('href');$('batch-status').textContent=''}
@@ -95,3 +96,5 @@ const galleryUrls=[];
 function syncBackgroundGallery(){for(const b of $('background-gallery').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.background===field('background').value))}
 function renderBackgroundGallery(assets){const root=$('background-gallery');clearUrls(galleryUrls);root.replaceChildren();const f=formats.find(x=>x.product==='card')||formats[0];if(!f)return;for(const bg of [{id:'none',label:'Sem fundo'},...assets]){const b=document.createElement('button'),im=document.createElement('img'),label=document.createElement('span');b.type='button';b.className='secondary';b.dataset.background=bg.id;const demo=composeDocument({format:f,template:proposals({family:'swiss'})[0],profile:{name:'Studio',background:bg.id}});im.src=imgUrl(demo,'front',galleryUrls);im.alt='';label.textContent=bg.label;b.append(im,label);b.addEventListener('click',()=>{field('background').value=bg.id;update()});root.append(b)}syncBackgroundGallery()}
 window.addEventListener('pagehide',e=>{if(!e.persisted)clearUrls(galleryUrls)});
+
+function updatePrintOptions(item){const p=productionOptions(item.doc.geometry,Number($('print-dpi').value),$('print-marks').checked,$('sheet-flip').value,$('sheet-orientation').value);$('print-capacity').textContent=(p.rasterAvailable?p.pixels.width+' × '+p.pixels.height+' px':p.reason)+' · '+['A4','A3'].map(k=>k+': '+(p.sheets[k].available?p.sheets[k].count+' por face':'não cabe')).join(' · ');for(const b of printButtons)b.disabled=exporting||!p.rasterAvailable||b.id==='download-sheet'&&!p.sheets.A4.available||b.id==='download-sheet-a3'&&!p.sheets.A3.available}

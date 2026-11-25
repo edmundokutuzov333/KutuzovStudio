@@ -1,0 +1,2 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {productionTools} from '../src/production-tools.mjs';
+test('packaged converters exactly match repository source',()=>{for(const name of ['vector_pdf.py','pdfx.py'])assert.equal(productionTools[name],readFileSync(new URL('../tools/'+name,import.meta.url),'utf8'));assert.equal(productionTools['requirements.txt'],'pypdf==5.9.0\n')});

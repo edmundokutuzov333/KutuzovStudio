@@ -61,3 +61,6 @@ Actual renderer-driven thumbnail gallery for the 12 editorial backgrounds, and l
 
 ## ICC verification (0.9.3)
 CMYK converter now independently checks the embedded OutputIntent stream byte-for-byte against the supplied printer profile via pypdf, in addition to page boxes, page count, font embedding, PDF/X identifier and Ghostscript renderability. This is a structural preflight, not full ISO certification. Tested local fixture: 85 × 55 mm with 3 mm bleed and 5 mm crop-mark margin, 2 pages, 4 embedded font subsets, identical 187484-byte test ICC. No printer profile is distributed.
+
+## Production reliability (0.9.4)
+Duplex long/short edge and portrait/landscape sheet options, actual sheet capacity and raster limits before exporting; sheet marks honour the user setting. PDF box nesting validated. Browser compression fallback uses standards-compliant uncompressed zlib blocks. ZIP contains optional offline conversion tools, dependency pin and instructions; CI asserts source parity. Local image resolution cap 2400 px with explicit canvas release. PDF/X remains a candidate requiring external validation.

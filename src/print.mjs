@@ -14,16 +14,17 @@ export function printGeometry(g,marks=false){
  const m=marks?5:0,W=w+2*(b+m),H=h+2*(b+m);
  return {media:[0,0,W*PT,H*PT],trim:[(m+b)*PT,(m+b)*PT,(m+b+w)*PT,(m+b+h)*PT],bleed:[m*PT,m*PT,(m+w+2*b)*PT,(m+h+2*b)*PT],placement:{x:m*PT,y:m*PT,w:(w+2*b)*PT,h:(h+2*b)*PT},marks};
 }
-export function sheetGeometry(g,paper='A4'){
+export function sheetGeometry(g,paper='A4',flip='long',sheetOrientation='portrait'){
  printGeometry(g);
- if(!['A4','A3'].includes(paper))throw Error('Formato de folha inválido.');const [W,H]=paper==='A3'?[297,420]:[210,297],margin=10,gap=6,aw=g.w+2*g.b,ah=g.h+2*g.b;
+ if(!['A4','A3'].includes(paper))throw Error('Formato de folha inválido.');if(!['long','short'].includes(flip)||!['portrait','landscape'].includes(sheetOrientation))throw Error('Configuração duplex inválida.');const dimensions=paper==='A3'?[297,420]:[210,297];const [W,H]=sheetOrientation==='landscape'?dimensions.reverse():dimensions,margin=10,gap=6,aw=g.w+2*g.b,ah=g.h+2*g.b;
  const cols=Math.floor((W-2*margin+gap)/(aw+gap)),rows=Math.floor((H-2*margin+gap)/(ah+gap));
  if(cols<1||rows<1)throw Error('O formato não cabe numa folha '+paper+' com margens.');
  const startX=(W-(cols*aw+(cols-1)*gap))/2,startY=(H-(rows*ah+(rows-1)*gap))/2;
  const front=[];for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)front.push({x:(startX+c*(aw+gap))*PT,y:(startY+r*(ah+gap))*PT,w:aw*PT,h:ah*PT});
- const back=front.map(p=>({...p,x:W*PT-p.x-p.w}));
- return {media:[0,0,W*PT,H*PT],front,back,cols,rows,count:rows*cols};
+ const mirrorX=(H>=W)===(flip==='long');const back=front.map(p=>mirrorX?{...p,x:W*PT-p.x-p.w}:{...p,y:H*PT-p.y-p.h});
+ return {media:[0,0,W*PT,H*PT],front,back,cols,rows,count:rows*cols,flip,sheetOrientation};
 }
+function validPdfBox(b,outer){return Array.isArray(b)&&b.length===4&&b.every(Number.isFinite)&&b[0]>=outer[0]-1e-5&&b[1]>=outer[1]-1e-5&&b[2]<=outer[2]+1e-5&&b[3]<=outer[3]+1e-5&&b[0]<b[2]&&b[1]<b[3]}
 const n=v=>{if(!Number.isFinite(v))throw Error('Invalid PDF coordinate');return Number(v.toFixed(5)).toString()};
 const box=a=>'['+a.map(n).join(' ')+']';
 const enc=s=>new TextEncoder().encode(s);
@@ -45,6 +46,8 @@ export function encodePdf(pages){
  for(const page of pages){
   const {image,media,trim,bleed,placements,marks,g}=page;
   if(!Array.isArray(media)||media.length!==4||!media.every(Number.isFinite)||media[0]!==0||media[1]!==0||media[2]<=0||media[3]<=0||!Array.isArray(placements)||!placements.length||placements.length>200||placements.some(p=>![p.x,p.y,p.w,p.h].every(Number.isFinite)||p.x<-.00001||p.y<-.00001||p.w<=0||p.h<=0||p.x+p.w>media[2]+.00001||p.y+p.h>media[3]+.00001))throw Error('Página PDF inválida.');
+  if((trim&&!validPdfBox(trim,media))||(bleed&&!validPdfBox(bleed,media))||(trim&&bleed&&!validPdfBox(trim,bleed)))throw Error('Caixas PDF inválidas.');
+  if(marks)printGeometry(g);
   if(!(image.bytes instanceof Uint8Array)||!image.bytes.length||!Number.isInteger(image.width)||!Number.isInteger(image.height)||image.width<1||image.height<1||image.width*image.height>MAX_PIXELS)throw Error('Imagem PDF inválida.');
   const img=add(stream('/Type /XObject /Subtype /Image /Width '+image.width+' /Height '+image.height+' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /FlateDecode',image.bytes));
   let commands='';for(const p of placements){commands+='q '+n(p.w)+' 0 0 '+n(p.h)+' '+n(p.x)+' '+n(p.y)+' cm /Im0 Do Q\n';if(marks)commands+=cutMarks(p,g)}
@@ -72,13 +75,16 @@ export function pngWithDpi(input,dpi){
 export async function exportPng(doc,side,dpi){
  const r=await rasterize(doc,side,dpi);try{const blob=await new Promise((resolve,reject)=>r.canvas.toBlob(b=>b?resolve(b):reject(Error('Falha PNG.')),'image/png'));return new Blob([pngWithDpi(new Uint8Array(await blob.arrayBuffer()),dpi)],{type:'image/png'});}finally{r.canvas.width=1;r.canvas.height=1}
 }
-async function rgbImage(doc,side,dpi){
- if(typeof CompressionStream!=='function')throw Error('O navegador não suporta compressão PDF. Usa um navegador actualizado ou exporta PNG.');
- const r=await rasterize(doc,side,dpi);try{const rgba=r.ctx.getImageData(0,0,r.width,r.height).data,rgb=new Uint8Array(r.width*r.height*3);for(let i=0,j=0;i<rgba.length;i+=4){rgb[j++]=rgba[i];rgb[j++]=rgba[i+1];rgb[j++]=rgba[i+2]}const compressed=await new Response(new Blob([rgb]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer();return {width:r.width,height:r.height,bytes:new Uint8Array(compressed)}}finally{r.canvas.width=1;r.canvas.height=1}
+export function zlibStored(data){
+ if(!(data instanceof Uint8Array)||data.length>36000000)throw Error('Dados RGB inválidos.');const blocks=Math.max(1,Math.ceil(data.length/65535)),out=new Uint8Array(2+blocks*5+data.length+4);out.set([0x78,0x01]);let i=2,pos=0,a=1,b=0;for(let block=0;block<blocks;block++){const len=Math.min(65535,data.length-pos);out[i++]=block===blocks-1?1:0;out[i++]=len&255;out[i++]=len>>>8;const inv=(~len)&65535;out[i++]=inv&255;out[i++]=inv>>>8;out.set(data.subarray(pos,pos+len),i);for(let j=0;j<len;j++){a=(a+data[pos+j])%65521;b=(b+a)%65521}pos+=len;i+=len}new DataView(out.buffer).setUint32(i,((b<<16)|a)>>>0);return out;
 }
-export async function exportPdf(doc,{dpi=300,marks=true,sheet=false,paper='A4'}={}){
- rasterDimensions(doc.geometry,dpi);const g=doc.geometry,geo=sheet?sheetGeometry(g,paper):printGeometry(g,marks),pages=[];
- for(const side of ['front','back']){const image=await rgbImage(doc,side,dpi);pages.push({image,media:geo.media,trim:geo.trim,bleed:geo.bleed,placements:sheet?geo[side]:[geo.placement],marks:sheet||marks,g})}
+async function compressRgb(rgb){if(typeof CompressionStream==='function'){try{return new Uint8Array(await new Response(new Blob([rgb]).stream().pipeThrough(new CompressionStream('deflate'))).arrayBuffer())}catch{}}return zlibStored(rgb)}
+async function rgbImage(doc,side,dpi){
+ const r=await rasterize(doc,side,dpi);try{const rgba=r.ctx.getImageData(0,0,r.width,r.height).data,rgb=new Uint8Array(r.width*r.height*3);for(let i=0,j=0;i<rgba.length;i+=4){rgb[j++]=rgba[i];rgb[j++]=rgba[i+1];rgb[j++]=rgba[i+2]}return {width:r.width,height:r.height,bytes:await compressRgb(rgb)}}finally{r.canvas.width=1;r.canvas.height=1}
+}
+export async function exportPdf(doc,{dpi=300,marks=true,sheet=false,paper='A4',flip='long',sheetOrientation='portrait'}={}){
+ rasterDimensions(doc.geometry,dpi);const g=doc.geometry,geo=sheet?sheetGeometry(g,paper,flip,sheetOrientation):printGeometry(g,marks),pages=[];
+ for(const side of ['front','back']){const image=await rgbImage(doc,side,dpi);pages.push({image,media:geo.media,trim:geo.trim,bleed:geo.bleed,placements:sheet?geo[side]:[geo.placement],marks,g})}
  return new Blob([encodePdf(pages)],{type:'application/pdf'});
 }
 
