@@ -45,7 +45,7 @@ jobs:
       - name: Prepare browser
         run: |
           python3 -m venv /tmp/studio-live
-          /tmp/studio-live/bin/pip install playwright==1.51.0
+          /tmp/studio-live/bin/pip install playwright==1.51.0 pypdf==5.9.0
           /tmp/studio-live/bin/python -m playwright install chromium
       - name: Verify live HTTPS user flow
         run: /tmp/studio-live/bin/python tests/deployed_browser.py
