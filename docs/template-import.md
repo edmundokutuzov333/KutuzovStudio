@@ -11,3 +11,6 @@ Editorial workflow (local isolated machine; no customer uploads to a server). In
 7. npm test && npm run build; CI verifies approved pack schema and generates catalog. Only approved packs in template-library are served. The original sources stay outside the public repo. No source upload, server conversion or fee for each customer. Existing Studio editor remains independent of this collection.
 
 Reference: psd-tools documentation https://psd-tools.readthedocs.io/en/stable/usage.html ; Inkscape CLI https://wiki.inkscape.org/wiki/Using_the_Command_Line ; PyMuPDF page API https://pymupdf.readthedocs.io/en/latest/page.html ; Adobe AI compatibility https://helpx.adobe.com/illustrator/desktop/save-and-export/export-files-to-different-formats/save-artwork-in-illustrator-ai-format.html .
+
+## Native output naming
+Editorial packs are JSON internals, not native Illustrator files. Use .json for new editorial drafts. Historical .kutuzov-template and project JSON .kutuzov imports remain legacy-compatible. Only a genuine Illustrator AI byte stream is eligible for the public .kutuzov native name. See docs/kutuzov-native.md.

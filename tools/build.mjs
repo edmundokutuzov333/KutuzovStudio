@@ -8,7 +8,7 @@ const root=fileURLToPath(new URL('../',import.meta.url));
 export async function build({out=join(root,'dist'),env=process.env}={}){
  const dest=resolve(out);if(dest===resolve(root)||!dest.startsWith(resolve(root)+ '/')&&env.STUDIO_TEST_BUILD!=='1')throw Error('Invalid build directory');
  const src=(await readdir(join(root,'src'))).filter(x=>/\.(mjs|css)$/.test(x)).map(x=>'src/'+x).sort();
- const files=['index.html','templates.html','admin.html','privacy.html','icon.svg','manifest.webmanifest','sw.js','docs/print-production.html','tools/pdfx.py','tools/vector_pdf.py','404.html',...src];
+ const files=['index.html','templates.html','native.html','tools/open-kutuzov.jsx','admin.html','privacy.html','icon.svg','manifest.webmanifest','sw.js','docs/print-production.html','tools/pdfx.py','tools/vector_pdf.py','404.html',...src];
  const bytes=new Map();for(const f of files)bytes.set(f,await readFile(join(root,f)));
  const library=[];let librarySize=0;for(const name of (await readdir(join(root,'template-library'))).sort()){if(!/^[a-z0-9-]{1,64}\.json$/.test(name))continue;const data=await readFile(join(root,'template-library',name));const p=parsePack(data.toString());if(p.status!=='approved'||name!==p.id+'.json')throw Error('Unapproved or mismatched library template: '+name);librarySize+=data.length;if(library.length>=100||librarySize>80000000)throw Error('Template library exceeds budget');library.push({id:p.id,title:p.title,product:p.product});bytes.set('template-library/'+name,data)}
  bytes.set('template-library/catalog.json',Buffer.from(JSON.stringify(library)));
