@@ -200,6 +200,13 @@ jobs:
           node tests/native_proof.mjs /tmp/real-card.ai /tmp/native-proof
           cmp /tmp/real-card.ai /tmp/native-proof/cartao-teste.kutuzov
           cp tools/open-kutuzov.jsx /tmp/native-proof/
+          python3 -m venv /tmp/native-qa
+          /tmp/native-qa/bin/pip install playwright==1.51.0
+          /tmp/native-qa/bin/python -m playwright install chromium
+          npm run build
+          python3 -m http.server 8003 --directory dist > /tmp/studio-native-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://localhost:8003/native.html >/dev/null && break; sleep 1; done
+          /tmp/native-qa/bin/python tests/native_browser.py /tmp/real-card.ai
           printf '%s\n' 'Original MIT fixture: Jim Bennett / BusinessCards. Template credited to Anthony Chu and Alex Karcher; artwork credited to Ashley McNamara. For interoperability testing only; not a Kutuzov Studio catalogue design.' > /tmp/native-proof/ATTRIBUTION.txt
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

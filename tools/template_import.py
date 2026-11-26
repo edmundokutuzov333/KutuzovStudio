@@ -8,7 +8,7 @@ import xml.etree.ElementTree as ET
 from PIL import Image
 Image.MAX_IMAGE_PIXELS=40_000_000
 NS='{http://www.w3.org/2000/svg}'
-EXT={'.svg','.eps','.ai','.psd','.pdf'}
+EXT={'.svg','.eps','.ai','.psd','.pdf','.kutuzov'}
 FIELDS={'name','role','company','phone','email','website','address','slogan','department','badgeId','badgeKind','expiry','qr','barcode','photo','logo'}
 TEXT=FIELDS-{'qr','barcode','photo','logo'}
 MAX=100_000_000
@@ -60,6 +60,11 @@ def candidate(i,text,box,size=0,color='#000000',family='sans-serif',weight=400,a
 def pdf_open(path,work):
     import pymupdf
     with path.open('rb') as f:magic=f.read(16)
+    if path.suffix.lower()=='.kutuzov':
+        data=path.read_bytes()
+        native_pdf=magic.startswith(b'%PDF-') and re.search(rb'/Illustrator\b',data) and re.search(rb'/(?:AIPrivateData\d*|AIPDFPrivateData\d*|AIPrivateDataStream)\b',data) and data.rstrip().endswith(b'%%EOF')
+        native_ps=magic.startswith(b'%!PS-Adobe-') and re.search(rb'%%Creator:[^\r\n]*Illustrator',data,re.I) and re.search(rb'%AI[35789]_(?:FileFormat|ColorUsage|TemplateBox|ArtSize)',data) and b'%%EndSetup' in data
+        require(native_pdf or native_ps,'Only native AI bytes are accepted as .kutuzov')
     if magic.startswith(b'%PDF-'):return pymupdf.open(stream=path.read_bytes(),filetype='pdf')
     if magic.startswith(b'%!PS'):
         out=work/'converted.pdf'
