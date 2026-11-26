@@ -9,10 +9,10 @@ export function vectorPage(doc,side,marks=true){
 }
 export async function nativePrint(doc,marks=true,isCurrent=()=>true){
  assertEditable(doc);
- const assets=[...new Set(Object.values(doc.sides).flat().filter(n=>n.kind==='image').map(n=>n.asset.data))];await Promise.all(assets.map(async data=>{const image=new Image();image.src=data;await image.decode()}));await document.fonts.ready;if(!isCurrent())return;
+ const assets=[...new Set(Object.values(doc.sides).flat().filter(n=>n.kind==='image').map(n=>n.asset.data))];await Promise.all(assets.map(async data=>{const image=new Image();image.src=data;await image.decode()}));if(!isCurrent())return; // Artwork uses its own system font families, not remote UI fonts.
  if(document.body.classList.contains('native-print-active'))throw Error('Já existe uma impressão activa.');
  const g=doc.geometry,geo=printGeometry(g,marks),w=geo.media[2]*25.4/72,h=geo.media[3]*25.4/72;
- const root=document.getElementById('native-print'),sheet=[...document.styleSheets].find(s=>s.href&&s.href.endsWith('/src/style.css'));if(!root||!sheet)throw Error('Impressão vectorial indisponível.');
+ const root=document.getElementById('native-print'),sheet=document.querySelector('link[data-studio-print]')?.sheet;if(!root||!sheet)throw Error('Impressão vectorial indisponível.');
  const parser=new DOMParser(),nodes=['front','back'].map(side=>{const parsed=parser.parseFromString(vectorPage(doc,side,marks),'image/svg+xml');if(parsed.querySelector('parsererror'))throw Error('SVG inválido');const page=document.createElement('div');page.className='native-page';page.append(document.importNode(parsed.documentElement,true));return page});
  const rule=sheet.insertRule('@page { size: '+w.toFixed(4)+'mm '+h.toFixed(4)+'mm; margin: 0; }',sheet.cssRules.length);
  root.replaceChildren(...nodes);document.body.classList.add('native-print-active');
