@@ -54,6 +54,7 @@ jobs:
           /tmp/studio-venv/bin/python tools/pdfx.py /tmp/studio-rgb.pdf "$profile" /tmp/studio-cmyk.pdf --condition 'CI SWOP test only'
       - name: Exact vector PDF and ICC conversion
         run: |
+          /tmp/studio-venv/bin/python tests/vector-gradient-security.py
           node tests/vector-cli-fixture.mjs /tmp/studio-vector-source
           /tmp/studio-venv/bin/python tools/vector_pdf.py /tmp/studio-vector-source/front.svg /tmp/studio-vector-source/back.svg /tmp/studio-vector-source/PRINT-SPEC.json /tmp/studio-vector-exact.pdf
           pdftotext /tmp/studio-vector-exact.pdf - | grep -F 'Ana João'
@@ -133,6 +134,9 @@ jobs:
           python3 -m venv /tmp/compat
           /tmp/compat/bin/pip install playwright==1.51.0
           /tmp/compat/bin/python -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Prepare art proof gallery
+        if: matrix.browser == 'chromium'
+        run: node tests/art-gallery.mjs tests/art-proof
       - name: Browser end-to-end
         run: |
           python3 -m http.server 8000 > /tmp/studio-http.log 2>&1 &

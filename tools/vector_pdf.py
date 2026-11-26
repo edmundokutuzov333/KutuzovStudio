@@ -16,8 +16,8 @@ from pypdf.generic import RectangleObject, NameObject, DecodedStreamObject
 
 PT=72/25.4
 NS='{http://www.w3.org/2000/svg}'
-TAGS={'svg','rect','path','circle','text','g','defs','clipPath','image'}
-ATTRS={'width','height','viewBox','role','x','y','fill','d','stroke','stroke-width','stroke-dasharray','cx','cy','r','font-family','font-size','font-weight','text-anchor','id','href','clip-path','preserveAspectRatio','transform','shape-rendering','opacity'}
+TAGS={'svg','rect','path','circle','ellipse','text','g','defs','clipPath','image','linearGradient','stop'}
+ATTRS={'width','height','viewBox','role','x','y','fill','d','stroke','stroke-width','stroke-dasharray','cx','cy','r','font-family','font-size','font-weight','text-anchor','id','href','clip-path','preserveAspectRatio','transform','shape-rendering','opacity','rx','ry','x1','y1','x2','y2','offset','stop-color'}
 
 def validate_svg(path,w,h,b):
     if not path.is_file() or path.stat().st_size>65_000_000: raise ValueError('Invalid SVG file size')
@@ -30,14 +30,26 @@ def validate_svg(path,w,h,b):
         if not re.fullmatch(r'[0-9.]+mm',v) or abs(float(v[:-2])-expected)>1e-7: raise ValueError('SVG dimension mismatch')
     vb=[float(x) for x in root.get('viewBox','').split()]
     if len(vb)!=4 or any(not math.isfinite(x) or abs(x-y)>1e-7 for x,y in zip(vb,[-b,-b,w+2*b,h+2*b])): raise ValueError('SVG viewBox mismatch')
+    refs={}
+    for node in root.iter():
+        ident=node.get('id')
+        if ident:
+            if not re.fullmatch(r'[a-zA-Z0-9-]+',ident) or ident in refs: raise ValueError('Invalid or duplicate SVG ID')
+            refs[ident]=node.tag
     for node in root.iter():
         if not node.tag.startswith(NS) or node.tag[len(NS):] not in TAGS: raise ValueError('Unexpected SVG element')
         for key,value in node.attrib.items():
             if key not in ATTRS: raise ValueError('Unexpected SVG attribute: '+key)
             if key=='href':
                 if node.tag!=NS+'image' or not re.fullmatch(r'data:image/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}',value): raise ValueError('Only embedded images are allowed')
-            elif key=='clip-path':
-                if not re.fullmatch(r'url\(#[a-zA-Z0-9-]+\)',value): raise ValueError('External clipping path')
+            elif key=='clip-path' or key=='fill' and value.startswith('url('):
+                ref=re.fullmatch(r'url\(#([a-zA-Z0-9-]+)\)',value)
+                target=NS+('clipPath' if key=='clip-path' else 'linearGradient')
+                if not ref or refs.get(ref.group(1))!=target: raise ValueError('Invalid or external SVG reference')
+            elif key=='stop-color':
+                if not re.fullmatch(r'#[0-9a-fA-F]{6}',value): raise ValueError('Invalid gradient colour')
+            elif key in ('x1','x2','y1','y2','offset'):
+                if not re.fullmatch(r'(?:0|100)%',value): raise ValueError('Invalid gradient coordinate')
             elif re.search(r'url\s*\(|(?:https?|file|javascript|data):',value,re.I): raise ValueError('External SVG resource')
     return root
 

@@ -1,6 +1,11 @@
 """Real browser compatibility: actual inputs, downloads, local persistence and layout."""
 import sys, struct, zlib, io, zipfile, time, os
 from playwright.sync_api import sync_playwright, expect
+import xml.etree.ElementTree as ET
+def svg_has_text(svg,expected):
+    text=''.join(node.text or '' for node in ET.fromstring(svg).iter('{http://www.w3.org/2000/svg}text'))
+    return ''.join(expected.split()) in ''.join(text.split())
+
 
 def png_fixture():
     def chunk(t,d): return struct.pack('>I',len(d))+t+d+struct.pack('>I',zlib.crc32(t+d)&0xffffffff)
@@ -49,7 +54,7 @@ with sync_playwright() as p:
         page.screenshot(path='/tmp/studio-ui/mobile.png',full_page=True,animations='disabled')
         page.set_viewport_size({'width':1440,'height':900})
     name,svg=download('#download-front')
-    assert name.endswith('.svg') and b'Ana Compatibilidade' in svg
+    assert name.endswith('.svg') and svg_has_text(svg,'Ana Compatibilidade')
     deadline=time.monotonic()+30
     while not page.evaluate("() => {const im=document.querySelector('#front');return im.complete && im.naturalWidth>0}"):
         assert time.monotonic()<deadline,'Preview image did not decode'
@@ -97,6 +102,15 @@ with sync_playwright() as p:
     ready()
     expect(page.locator('#badge-fields')).to_be_visible()
     expect(page.locator('[data-product=badge]')).to_have_attribute('aria-pressed','true')
+    if engine=='chromium':
+        page.screenshot(path='/tmp/studio-ui/badge-editor.png',full_page=True,animations='disabled')
+        proof=context.new_page()
+        for product in ('card','badge'):
+            proof.goto('http://127.0.0.1:8000/tests/art-proof/'+product+'.html')
+            expect(proof.locator('img')).to_have_count(24)
+            assert proof.evaluate('() => Array.from(document.images).every(i=>i.complete&&i.naturalWidth>0)')
+            proof.screenshot(path='/tmp/studio-ui/'+product+'-collection.png',full_page=True,animations='disabled')
+        proof.close()
     assert not errors, errors
     print('COMPATIBILITY PASS',engine,flush=True)
     browser.close()

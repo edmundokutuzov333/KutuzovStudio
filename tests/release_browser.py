@@ -1,6 +1,11 @@
 """Test the actual static release, offline shell, real batch export and privacy isolation."""
 import io, json, zipfile, time
 from playwright.sync_api import sync_playwright, expect
+import xml.etree.ElementTree as ET
+def svg_has_text(svg,expected):
+    text=''.join(node.text or '' for node in ET.fromstring(svg).iter('{http://www.w3.org/2000/svg}text'))
+    return ''.join(expected.split()) in ''.join(text.split())
+
 from pypdf import PdfReader
 BASE='http://127.0.0.1:8001'
 MARKER='Private QA 7c9e'
@@ -44,7 +49,7 @@ with sync_playwright() as p:
     page.locator('[name=name]').fill(MARKER)
     ready()
     name,svg=download('#download-front')
-    assert name.endswith('.svg') and MARKER.encode() in svg
+    assert name.endswith('.svg') and svg_has_text(svg,MARKER)
     page.locator('#my-studio summary').click()
     page.locator('#project-title').fill('Offline QA')
     page.locator('#project-new').click()

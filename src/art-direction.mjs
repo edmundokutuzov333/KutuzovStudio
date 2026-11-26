@@ -59,7 +59,7 @@ export function composeArt({g,p,badge,template,profile,photo,logo,backgroundImag
   const addText=(fields,box,kind='body',opts={})=>{
    if(!fields.some(x=>x[1]))return;
    const font=fontFor(kind),color=opts.color||fg;
-   const entries=fields.map(([key,value,factor,weight=400])=>({key,value,size:Math.min(15,unit*factor*textScale),weight,gap:Math.max(.22,unit*.009),fill:color}));
+   const entries=fields.map(([key,value,factor,weight=400])=>({key,value,size:Math.min(15,unit*factor*textScale),font:['name','monogram'].includes(key)?fontFor('headline'):['company','badgeKind','badgeId','expiry','phone','email','website'].includes(key)?fontFor('meta'):'sans-serif',weight,gap:Math.max(.22,unit*.009),fill:color}));
    const fit=fitBlock(entries,{...box,align:align(opts.align||'start'),center:opts.center??true},font,measure);
    nodes.push(...fit.nodes);warnings.push(...fit.warnings);
   };
@@ -74,8 +74,9 @@ export function composeArt({g,p,badge,template,profile,photo,logo,backgroundImag
   if(isFront&&badge){
    const roleH=area.h*(wide?.23:.16),role={...area,h:roleH};nodes.push(gradient(role,d,a,'horizontal'),rect(role.x,role.y,role.w,role.h,d,.78));addText([['badgeKind',badge.label,.095,700]],trim(role,Math.min(role.w,role.h)*.10),'meta',{color:contrastColor(d),align:'middle'});
    area={...area,y:area.y+roleH+gap,h:area.h-roleH-gap};
-   const [first,second]=split(area,wide?'x':'y',wide?.39:.47,gap);
-   const media=layout==='rail'&&wide?second:first,info=media===first?second:first;
+   const fraction=({stack:.34,split:.40,center:.50,rail:.27,editorial:.43})[layout];const reverse=layout==='split'&&wide||layout==='editorial'||layout==='rail'&&wide;
+   const [first,second]=split(area,wide?'x':'y',reverse?1-fraction:fraction,gap);
+   const media=reverse?second:first,info=reverse?first:second;
    if(showPhoto&&photo)addPhoto(media);else addArt(media,true);
    let q=info;if(showLogo&&logo&&(showPhoto&&photo))q=reserveLogo(q);
    addText([...identity,['department',badge.department,.055],['badgeId',badge.id?'ID: '+badge.id:'',.062,700]],q,'headline',{align:layout==='center'?'middle':'start'});
@@ -91,7 +92,7 @@ export function composeArt({g,p,badge,template,profile,photo,logo,backgroundImag
     if(mediaNeeded)addPhoto(artQ);else addArt(artQ,layout==='center'||layout==='editorial');
     area=textQ;
    }else{
-    const [main,band]=split(area,'y',.81,gap);addArt(band,false);area=main;
+    const [main,band]=split(area,'y',.73,gap);addArt(band,false);area=main;
    }
    area=reserveLogo(area);
    const contactPresent=contacts.some(x=>x[1]),defaultAlign=layout==='center'?'middle':'start';
@@ -104,6 +105,7 @@ export function composeArt({g,p,badge,template,profile,photo,logo,backgroundImag
    const backFields=badge?[['company',p.company||p.name,.10,700],['badgeKind',badge.label,.073,700],['badgeId',badge.id?'ID: '+badge.id:'',.058],['expiry',badge.expiry?'Validade: '+badge.expiry:'',.055],['website',p.website,.05],['phone',p.phone,.05],['slogan',p.slogan,.05]]:[['company',p.company||p.name,.12,700],['slogan',p.slogan,.06],['website',p.website,.058],['address',p.address,.052],['phone',p.phone,.052],['email',p.email,.052]];
    // On compact backs with codes, prioritize the actual information rather than artwork.
    const dense=backFields.filter(x=>x[1]).length>=4||p.qr&&badge?.barcode||area.h<15||area.w<15;
+   if(dense&&area.h>=20&&area.w>=20){const [text,band]=split(area,'y',.87,gap*.5);addArt(band);area=text;}
    if(!dense){const [mark,info]=split(area,wide?'x':'y',layout==='center'?.46:.32,gap);addArt(mark,true);area=info;}
    else if(showLogo&&logo&&area.h>17)area=reserveLogo(area);
    addText(backFields,area,'body',{align:layout==='center'?'middle':'start'});

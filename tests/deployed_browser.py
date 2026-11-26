@@ -3,6 +3,11 @@ import os, time, io, zipfile
 from pypdf import PdfReader
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright, expect
+import xml.etree.ElementTree as ET
+def svg_has_text(svg,expected):
+    text=''.join(node.text or '' for node in ET.fromstring(svg).iter('{http://www.w3.org/2000/svg}text'))
+    return ''.join(expected.split()) in ''.join(text.split())
+
 origin=os.environ['STUDIO_URL']
 u=urlparse(origin)
 assert u.scheme=='https' and u.netloc and not u.path and not u.query and not u.fragment
@@ -28,7 +33,7 @@ with sync_playwright() as p:
     page.locator('#export-options > summary').click()
     with page.expect_download(timeout=60000) as info:page.locator('#download-front').click()
     d=info.value
-    assert d.failure() is None and b'QA Production 24b8' in d.path().read_bytes()
+    assert d.failure() is None and svg_has_text(d.path().read_bytes(),'QA Production 24b8')
     if page.locator('#preflight-confirm').is_visible():page.locator('#accept-warnings').check()
     with page.expect_download(timeout=60000) as info:page.locator('#download-pdf').click()
     d=info.value
