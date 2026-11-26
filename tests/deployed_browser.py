@@ -25,6 +25,7 @@ with sync_playwright() as p:
     expect(page.locator('#designs')).to_have_attribute('aria-busy','false')
     expect(page.locator('#editor')).to_be_visible()
     if page.locator('#preflight-confirm').is_visible():page.locator('#accept-warnings').check()
+    page.locator('#export-options > summary').click()
     with page.expect_download(timeout=60000) as info:page.locator('#download-front').click()
     d=info.value
     assert d.failure() is None and b'QA Production 24b8' in d.path().read_bytes()
@@ -56,6 +57,7 @@ with sync_playwright() as p:
     page.locator('[data-product=badge]').click()
     expect(page.locator('#designs')).to_have_attribute('aria-busy','false')
     expect(page.locator('#badge-fields')).to_be_visible()
+    page.locator('#batch-panel > summary').click()
     page.locator('#batch-csv').set_input_files({'name':'qa.csv','mimeType':'text/csv','buffer':b'name,badgeId,barcode,qr\nQA One,001,ABC-001,https://example.com/a\nQA Two,002,ABC-002,https://example.com/b'})
     page.locator('#batch-warnings').check()
     with page.expect_download(timeout=60000) as info:page.locator('#batch-run').click()

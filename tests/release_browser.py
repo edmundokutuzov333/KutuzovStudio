@@ -19,6 +19,7 @@ with sync_playwright() as p:
         expect(page.locator('#designs')).to_have_attribute('aria-busy','false')
         expect(page.locator('#editor')).to_be_visible()
     def download(selector):
+        if selector.startswith('#download-') and selector!='#download-pdf' and not page.locator('#export-options').evaluate('(el)=>el.open'):page.locator('#export-options > summary').click()
         if page.locator('#preflight-confirm').is_visible():page.locator('#accept-warnings').check()
         with page.expect_download(timeout=60000) as info:page.locator(selector).click()
         d=info.value
@@ -56,11 +57,13 @@ with sync_playwright() as p:
     expect(page.locator('#workspace-status')).to_have_text('Projecto aberto.')
     expect(page.locator('[name=name]')).to_have_value(MARKER)
     page.locator('[name=company]').fill('QA Company')
+    page.locator('#extra-details > summary').click()
     page.locator('[name=website]').fill('https://private.example')
     page.locator('[name=address]').fill('Private address')
     ready()
     page.locator('[data-product=badge]').click()
     ready()
+    page.locator('#batch-panel > summary').click()
     page.locator('#batch-csv').set_input_files({'name':'people.csv','mimeType':'text/csv','buffer':b'name,badgeId,barcode,qr\nAna,001,ABC-001,https://example.com/a\nJoao,002,ABC-002,https://example.com/b'})
     page.locator('#batch-warnings').check()
     name,data=download('#batch-run')

@@ -22,14 +22,21 @@ with sync_playwright() as p:
         expect(page.locator('#designs')).to_have_attribute('aria-busy','false')
         expect(page.locator('#editor')).to_be_visible()
     def download(selector):
+        if selector!='#download-pdf' and not page.locator('#export-options').evaluate('(el)=>el.open'): page.locator('#export-options > summary').click()
         if page.locator('#preflight-confirm').is_visible(): page.locator('#accept-warnings').check()
         with page.expect_download(timeout=60000) as info: page.locator(selector).click()
         d=info.value
         assert d.failure() is None,d.failure()
         return d.suggested_filename,d.path().read_bytes()
     ready()
+    expect(page.locator('[name=name]')).to_have_value('')
+    expect(page.locator('#download-pdf')).to_be_disabled()
+    expect(page.locator('#design-settings')).not_to_have_attribute('open','')
+    expect(page.locator('#export-options')).not_to_have_attribute('open','')
     page.locator('[name=name]').fill('Ana Compatibilidade')
     ready()
+    name,pdf=download('#download-pdf')
+    assert name.endswith('.pdf') and pdf.startswith(b'%PDF-1.4')
     name,svg=download('#download-front')
     assert name.endswith('.svg') and b'Ana Compatibilidade' in svg
     deadline=time.monotonic()+30
@@ -39,6 +46,7 @@ with sync_playwright() as p:
     for width in (390,320,1440):
         page.set_viewport_size({'width':width,'height':900})
         assert page.evaluate('document.documentElement.scrollWidth <= innerWidth+2'),f'Overflow {width}px'
+    page.locator('#design-settings > summary').click()
     page.locator('.background-gallery-panel summary').click()
     page.locator('#background-filter').fill('Grid')
     expect(page.locator('#background-gallery button:visible')).to_have_count(1)
