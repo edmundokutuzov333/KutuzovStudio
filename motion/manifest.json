@@ -1,0 +1,64 @@
+{
+  "title": "A tua identidade. Em poucos cliques.",
+  "branch": "motion/studio-commercial",
+  "source_commit": "3c1a758483357f89a46598b26f4b32a1abc618f7",
+  "video": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "duration": 26.5,
+    "frames": 795,
+    "codec": "h264",
+    "audio": "aac 48kHz stereo",
+    "sha256": "b8fc83da561d44d476f791fba6f9b729822b12d1ad155a3f6657e20f2ce9e2ed"
+  },
+  "render_sha256": "30c1324e1aafecd1c86da7f229d5d73590a3ff925886eed42554a46e9e161f3f",
+  "scenes": [
+    [
+      0,
+      2.5,
+      "Identidade"
+    ],
+    [
+      2.5,
+      5.5,
+      "Cartão"
+    ],
+    [
+      5.5,
+      8,
+      "Produtos"
+    ],
+    [
+      8,
+      12,
+      "Preencher"
+    ],
+    [
+      12,
+      16,
+      "Escolher"
+    ],
+    [
+      16,
+      19.5,
+      "Descarregar"
+    ],
+    [
+      19.5,
+      22.5,
+      "Mobile"
+    ],
+    [
+      22.5,
+      26.5,
+      "CTA"
+    ]
+  ],
+  "production": {
+    "music": "original synthesized score",
+    "reference": "three user-supplied videos; motion principles only",
+    "magnific": false,
+    "qa": "795 frames, complete FFmpeg decode, H.264/AAC"
+  }
+}
