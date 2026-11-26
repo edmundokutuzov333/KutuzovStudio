@@ -138,6 +138,14 @@ jobs:
           python3 -m http.server 8000 > /tmp/studio-http.log 2>&1 &
           for i in {1..20}; do curl -fsS http://localhost:8000/ >/dev/null && break; sleep 1; done
           /tmp/compat/bin/python tests/browser_compatibility.py ${{ matrix.browser }}
+      - name: Visual QA captures
+        if: matrix.browser == 'chromium' && always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: studio-ui-screenshots
+          path: /tmp/studio-ui/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Editorial interface contract (mocked authentication)
         if: matrix.browser == 'chromium'
         run: |

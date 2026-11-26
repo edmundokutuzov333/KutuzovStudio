@@ -1,5 +1,5 @@
 """Real browser compatibility: actual inputs, downloads, local persistence and layout."""
-import sys, struct, zlib, io, zipfile, time
+import sys, struct, zlib, io, zipfile, time, os
 from playwright.sync_api import sync_playwright, expect
 
 def png_fixture():
@@ -35,8 +35,19 @@ with sync_playwright() as p:
     expect(page.locator('#export-options')).not_to_have_attribute('open','')
     page.locator('[name=name]').fill('Ana Compatibilidade')
     ready()
+    page.locator('#designs article').nth(4).locator('button').click()
+    expect(page.locator('#designs article').nth(4).locator('button')).to_have_attribute('aria-pressed','true')
     name,pdf=download('#download-pdf')
     assert name.endswith('.pdf') and pdf.startswith(b'%PDF-1.4')
+    if engine=='chromium':
+        os.makedirs('/tmp/studio-ui',exist_ok=True)
+        page.set_viewport_size({'width':1440,'height':1000})
+        page.evaluate('window.scrollTo(0,0)')
+        page.screenshot(path='/tmp/studio-ui/desktop.png',full_page=True,animations='disabled')
+        page.set_viewport_size({'width':390,'height':844})
+        page.evaluate('window.scrollTo(0,0)')
+        page.screenshot(path='/tmp/studio-ui/mobile.png',full_page=True,animations='disabled')
+        page.set_viewport_size({'width':1440,'height':900})
     name,svg=download('#download-front')
     assert name.endswith('.svg') and b'Ana Compatibilidade' in svg
     deadline=time.monotonic()+30

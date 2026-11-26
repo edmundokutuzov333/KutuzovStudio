@@ -198,3 +198,19 @@ button.secondary{background:transparent;border:1px solid var(--border)}button.se
 @media(max-width:380px){.site-header{padding:10px 16px;gap:8px}.site-header nav{gap:4px}.nav-pill{font-size:.54rem;padding:7px 8px}.site-logo svg{height:17px}#studio-content{padding-inline:16px}.personal-fields{grid-template-columns:1fr}.results-head{align-items:start}.results-head button{font-size:.57rem;padding:9px}.download-meta{align-items:start;flex-direction:column;gap:3px}.actions,.print-options{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
 @media print{body.native-print-active>header,body.native-print-active>main,body.native-print-active>footer,body.native-print-active>.skip-link{display:none!important}body.native-print-active{margin:0!important;padding:0!important;background:white!important}body.native-print-active #native-print{display:block;print-color-adjust:exact;-webkit-print-color-adjust:exact}.native-page{break-after:page;margin:0;padding:0;line-height:0}.native-page:last-child{break-after:auto}.native-page svg{display:block;max-width:none;max-height:none}}
+
+#editor[aria-busy=true] .sides{opacity:.62}#editor[aria-busy=true] .primary-download{opacity:.45}
+.support-page main{max-width:960px;padding:clamp(24px,5vw,64px);margin:auto}
+.support-page .workspace-tools{display:grid;gap:18px}
+.support-page h1{font-size:clamp(2.8rem,7vw,5.5rem);margin-bottom:8px}
+.support-page h2{font-size:clamp(1.25rem,2.8vw,1.7rem);margin-top:12px}
+.support-page p,.support-page li{color:var(--muted-foreground);line-height:1.7}
+.support-page li{margin-bottom:10px}
+.support-page main a{color:var(--ember);text-decoration:underline;text-underline-offset:4px}
+.support-page code{font-family:var(--font-mono);color:var(--bone);overflow-wrap:anywhere}
+.support-page form,.support-page #editor-panel,.support-page #enroll-panel,.support-page .print-panel,.support-page #editor-fields,.support-page #asset-candidates,.support-page #stock-search-results{display:grid;gap:12px}
+.support-page form,.support-page .print-panel,.support-page #editor-fields details,.support-page #asset-candidates article,.support-page #stock-search-results article{border:1px solid var(--border);padding:18px;background:var(--card);border-radius:var(--radius);min-width:0}
+.support-page summary{cursor:pointer;color:var(--bone);min-height:44px;padding:12px 0;font-weight:600}
+.support-page textarea{min-height:160px;resize:vertical;font-family:var(--font-mono);font-size:.75rem}
+.support-page .editor-field-row{display:grid;gap:8px;border-bottom:1px solid var(--border);padding:10px 0}
+.support-page #admin-status{color:var(--ember)}
