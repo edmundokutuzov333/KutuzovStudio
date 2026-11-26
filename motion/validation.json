@@ -1,0 +1,19 @@
+{
+  "artifact": "Kutuzov_Studio_Commercial.mp4",
+  "sha256": "d757e532224f44047669001e108c7287bd1ba0a1ae4090e40a435fd72463627a",
+  "bytes": 3488875,
+  "duration_seconds": 30,
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "frames": 900,
+  "video_codec": "h264",
+  "audio_codec": "aac",
+  "audio_channels": 2,
+  "audio_peak_dbfs": -4.3,
+  "full_decode": "passed",
+  "sample_frames": "passed",
+  "source_sha256": "a6b445b36147f06a971af0b77b906313404555d148006ff324b1a99f1da65b66",
+  "artifact_delivery": "separate downloadable MP4 and source ZIP; not stored in GitHub",
+  "main_changed": false
+}
