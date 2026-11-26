@@ -56,7 +56,7 @@ with sync_playwright() as p:
     page.locator('[data-product=badge]').click()
     expect(page.locator('#designs')).to_have_attribute('aria-busy','false')
     expect(page.locator('#badge-fields')).to_be_visible()
-    page.locator('#batch-csv').set_input_files({'name':'qa.csv','mimeType':'text/csv','buffer':b'name,badgeId,barcode,qr\\nQA One,001,ABC-001,https://example.com/a\\nQA Two,002,ABC-002,https://example.com/b'})
+    page.locator('#batch-csv').set_input_files({'name':'qa.csv','mimeType':'text/csv','buffer':b'name,badgeId,barcode,qr\nQA One,001,ABC-001,https://example.com/a\nQA Two,002,ABC-002,https://example.com/b'})
     page.locator('#batch-warnings').check()
     with page.expect_download(timeout=60000) as info:page.locator('#batch-run').click()
     d=info.value
