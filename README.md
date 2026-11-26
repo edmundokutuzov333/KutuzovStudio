@@ -84,3 +84,6 @@ The independent production baseline is https://kutuzov-studio.vercel.app (Hobby 
 
 ## Portfolio-native Studio (1.1.0-rc.1)
 Public UI adapted from the actual portfolio theme, traced EK monogram and liquid-glass controls (source commit 9e47b25073356bb88c68e64efe10e9fb0f8ab484). No edits to the portfolio repository. The Studio remains a separate deployment while presenting itself as a single portfolio page; no Phase 12 integration. Default flow: product, basic identity, five live options, selected front/back, primary PDF download. Examples are preview-only until a name is entered; technical options, assets, batch and local workspace remain accessible via progressive disclosure. Same Google Fonts stylesheet with tightly scoped CSP and offline fallback. No React/TanStack migration or additional runtime dependencies.
+
+## Art direction v2
+12 original vector art systems and 60 template IDs, each with card and badge compositions. Paired face thumbnails, automatic monograms, adaptive photo/logo and code zones, original gradients and graphic motifs. Legacy snapshots remain on artVersion 1; new designs use artVersion 2. See docs/art-direction.md.

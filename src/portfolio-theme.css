@@ -214,3 +214,8 @@ button.secondary{background:transparent;border:1px solid var(--border)}button.se
 .support-page textarea{min-height:160px;resize:vertical;font-family:var(--font-mono);font-size:.75rem}
 .support-page .editor-field-row{display:grid;gap:8px;border-bottom:1px solid var(--border);padding:10px 0}
 .support-page #admin-status{color:var(--ember)}
+
+/* Show the actual paired stationery, not a flat mockup or cropped stock image. */
+.designs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.design-option{padding:9px;gap:9px}.design-pair{display:grid;grid-template-columns:1fr 1fr;gap:5px;min-width:0;align-items:center}.design-pair img{height:clamp(75px,9vw,142px);padding:0;background:transparent;filter:drop-shadow(0 3px 5px rgba(0,0,0,.24));min-width:0}
+@media(max-width:780px){.designs{grid-template-columns:repeat(2,minmax(0,1fr))}.design-option{padding:7px}.design-pair img{height:clamp(63px,18vw,125px)}}

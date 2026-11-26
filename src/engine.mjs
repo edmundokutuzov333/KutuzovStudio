@@ -1,3 +1,4 @@
+import {composeArt} from './art-direction.mjs';
 import {backgroundPermission} from './asset-policy.mjs';
 import {backgroundNodes} from './backgrounds.mjs';
 import {badgeFields,code39Bars,code39Svg} from './badge.mjs';
@@ -39,19 +40,20 @@ export function fitBlock(fields,box,font,measure=defaultMeasure){
  const layout=scale=>{let height=0;const groups=present.map(f=>{const size=f.size*scale,lines=wrap(f.value,w,size,font,f.weight,measure);const lineHeight=size*1.32;const gap=f.gap*scale;height+=lines.length*lineHeight+gap;return {...f,size,lines,lineHeight,gap}});return {groups,height:height-(groups.at(-1)?.gap||0)}};
  let lo=0,hi=1;for(let i=0;i<22;i++){const mid=(lo+hi)/2;const l=layout(mid);if(l.height<=h&&l.groups.every(f=>f.lines.every(t=>measure(t,f.size,font,f.weight)<=w+.000001)))lo=mid;else hi=mid}
  const {groups,height}=layout(lo);let top=y+(box.center?(h-height)/2:0);const nodes=[],warnings=[];
- for(const f of groups){if(f.size<2.12)warnings.push('Texto pequeno: '+f.key+' ('+(f.size*72/25.4).toFixed(1)+' pt).');for(const value of f.lines){nodes.push({kind:'text',value,x:align==='middle'?x+w/2:x,y:top+f.size,size:f.size,font,weight:f.weight,align,fill:f.fill,max:w});top+=f.lineHeight}top+=f.gap}
+ for(const f of groups){if(f.size<2.12)warnings.push('Texto pequeno: '+f.key+' ('+(f.size*72/25.4).toFixed(1)+' pt).');for(const value of f.lines){nodes.push({kind:'text',key:f.key,value,x:align==='middle'?x+w/2:x,y:top+f.size,size:f.size,font,weight:f.weight,align,fill:f.fill,max:w});top+=f.lineHeight}top+=f.gap}
  return {nodes,warnings};
 }
 function rect(x,y,w,h,fill){return {kind:'rect',x,y,w,h,fill}}
 function assetValid(a){return !a||(typeof a.data==='string'&&a.data.length<=20000000&&/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(a.data)&&Number.isInteger(a.width)&&Number.isInteger(a.height)&&a.width>0&&a.height>0&&a.width<=2400&&a.height<=2400)}
 function decorations(pattern,w,h,b,accent,s){const a=[];const p=(d)=>({kind:'path',d,fill:accent});if(pattern==='line')a.push(rect(-b,-b,w+2*b,Math.min(s*.6,Math.max(.5,h*.035))+b,accent));if(pattern==='frame')a.push({kind:'frame',x:1,y:1,w:w-2,h:h-2,fill:accent});if(pattern==='band')a.push(rect(-b,-b,w+2*b,1+b,accent));if(pattern==='blocks')a.push(rect(w*.8,-b,w*.2+b,1.8+b,accent),rect(-b,h-1.8,w*.2+b,1.8+b,accent));if(pattern==='grid')for(let i=0;i<5;i++)a.push(rect(w*(.78+i*.04),-b,.5,2+b,accent));if(pattern==='circles')a.push({kind:'circle',x:w,y:0,r:Math.min(s*.8,Math.min(w,h)*.26),fill:accent});if(pattern==='diagonal')a.push(p('M'+w*.78+' '+(-b)+'H'+(w+b)+'V'+Math.min(h*.08,s*.7)+'Z'));return a}
-export function composeDocument({format,profile,template,orientation='native',photo=null,logo=null,backgroundImage=null,focusX=.5,focusY=.5,variation=0,textScale=1,textAlign='auto',photoMode='cover',showPhoto=true,showLogo=true,measure=defaultMeasure}){
+export function composeDocument({format,profile,template,orientation='native',photo=null,logo=null,backgroundImage=null,focusX=.5,focusY=.5,variation=0,textScale=1,textAlign='auto',photoMode='cover',showPhoto=true,showLogo=true,measure=defaultMeasure,artVersion=2}){
  const p=normalizeProfile(profile),badge=format?.product==='badge'?badgeFields(profile):null;if(!templates.includes(template))throw Error('Template inválido.');if(!assetValid(photo)||!assetValid(logo)||!assetValid(backgroundImage))throw Error('Imagem inválida.');
  if(!Number.isFinite(textScale)||textScale<.75||textScale>1.25||!['auto','start','middle'].includes(textAlign))throw Error('Tipografia inválida.');
  if(!['cover','contain'].includes(photoMode))throw Error('Modo de imagem inválido.');
  if(!Number.isSafeInteger(variation)||variation<0||variation>4)throw Error('Variação inválida.');
  const g=geometry(oriented(format,orientation)),{w,h,b,s}=g,f=template.family,accent=p.color||f.accent,bg=template.layout==='center'&&p.color?accent:f.bg,fg=template.layout==='center'&&p.color?contrastColor(bg):f.fg;
- const warnings=[],sides={};const image=(a,x,y,iw,ih,mode)=>{const scale=mode==='cover'?Math.max(iw/a.width,ih/a.height):Math.min(iw/a.width,ih/a.height),dpi=25.4/scale;if(dpi<300)warnings.push('Imagem: resolução efectiva '+Math.floor(dpi)+' DPI.');return {kind:'image',asset:a,x,y,w:iw,h:ih,mode,focusX:Math.max(0,Math.min(1,Number(focusX)||0)),focusY:Math.max(0,Math.min(1,Number(focusY)||0))}};
+ if(![1,2].includes(artVersion))throw Error('Versão de arte inválida.');const warnings=[],sides={};const image=(a,x,y,iw,ih,mode)=>{const scale=mode==='cover'?Math.max(iw/a.width,ih/a.height):Math.min(iw/a.width,ih/a.height),dpi=25.4/scale;if(dpi<300)warnings.push('Imagem: resolução efectiva '+Math.floor(dpi)+' DPI.');return {kind:'image',asset:a,x,y,w:iw,h:ih,mode,focusX:Math.max(0,Math.min(1,Number(focusX)||0)),focusY:Math.max(0,Math.min(1,Number(focusY)||0))}};
+ if(artVersion===2)return composeArt({g,p,badge,template,profile,photo,logo,backgroundImage,showPhoto,showLogo,photoMode,textScale,textAlign,variation,image,fitBlock,measure,contrastColor,backgroundNodes,backgroundPermission,code39Bars,warnings});
  for(const side of ['front','back']){
   const customBg=profile.background==='uploaded';if(customBg&&!backgroundImage)throw Error('Selecciona primeiro uma imagem de fundo.');const nodes=[rect(-b,-b,w+2*b,h+2*b,bg),...(customBg?[{...image(backgroundImage,-b,-b,w+2*b,h+2*b,'cover'),focusX:.5,focusY:.5},{...rect(-b,-b,w+2*b,h+2*b,bg),opacity:.86}]:backgroundNodes(profile.background||'none',g,bg,fg)),...decorations(variation===0?f.pattern:['line','frame','grid','diagonal'][variation-1],w,h,b,accent,s)];
   const inner={x:s,y:s,w:w-2*s,h:h-2*s};let area={...inner};const isFront=side==='front';const portrait=isFront&&showPhoto&&photo;
@@ -69,13 +71,15 @@ export function composeDocument({format,profile,template,orientation='native',ph
   if(template.layout==='split'&&!portrait&&w>=h){const band=Math.min(8,area.w*.15);nodes.push(rect(area.x,area.y,band,area.h,accent));area.x+=band+1.2;area.w-=band+1.2}
   const fit=fitBlock(fields,{...area,align:textAlign==='auto'?(template.layout==='center'?'middle':'start'):textAlign,center:template.layout!=='editorial'},f.font,measure);nodes.push(...fit.nodes);warnings.push(...fit.warnings);sides[side]=nodes;
  }
- return {geometry:g,templateId:template.id,backgroundRights:profile.background==='uploaded'?backgroundPermission(backgroundImage):null,sides,warnings:[...new Set(warnings)]};
+ return {geometry:g,templateId:template.id,artVersion:1,backgroundRights:profile.background==='uploaded'?backgroundPermission(backgroundImage):null,sides,warnings:[...new Set(warnings)]};
 }
 export function svgDocument(doc,side='front',includeBleed=true){
  const {w,h,b:bleed}=doc.geometry,b=includeBleed?bleed:0,W=w+2*b,H=h+2*b;
  if(!doc.sides[side])throw Error('Face inválida');
  let count=0;const markup=doc.sides[side].map(n=>{
   if(n.kind==='rect')return '<rect x="'+n.x+'" y="'+n.y+'" width="'+n.w+'" height="'+n.h+'" fill="'+n.fill+'"'+(n.opacity!==undefined?' opacity="'+n.opacity+'"':'')+'/>';
+  if(n.kind==='gradient'){const id=side+'-gradient-'+(++count),axis=n.axis==='vertical'?'0% 100%':n.axis==='horizontal'?'100% 0%':'100% 100%',end=axis.split(' ');return '<defs><linearGradient id="'+id+'" x1="0%" y1="0%" x2="'+end[0]+'" y2="'+end[1]+'"><stop offset="0%" stop-color="'+n.colors[0]+'"/><stop offset="100%" stop-color="'+n.colors[1]+'"/></linearGradient></defs><rect x="'+n.x+'" y="'+n.y+'" width="'+n.w+'" height="'+n.h+'" fill="url(#'+id+')"/>'}
+  if(n.kind==='ellipse')return '<ellipse cx="'+n.x+'" cy="'+n.y+'" rx="'+n.rx+'" ry="'+n.ry+'" fill="'+n.fill+'" opacity="'+n.opacity+'"/>';
   if(n.kind==='frame')return '<rect x="'+n.x+'" y="'+n.y+'" width="'+n.w+'" height="'+n.h+'" stroke="'+n.fill+'" fill="none" stroke-width=".35"/>';
   if(n.kind==='circle')return '<circle cx="'+n.x+'" cy="'+n.y+'" r="'+n.r+'" stroke="'+n.fill+'" fill="none" stroke-width=".5"/>';
   if(n.kind==='path')return '<path d="'+n.d+'" fill="'+n.fill+'"/>';
