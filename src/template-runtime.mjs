@@ -5,6 +5,7 @@ export const fields=Object.freeze({name:'Nome',role:'Cargo',company:'Empresa',ph
 const MAX=32000000,hex=/^#[0-9a-f]{6}$/i,keys=Object.keys(fields);
 const finite=(x,a,b)=>typeof x==='number'&&Number.isFinite(x)&&x>=a&&x<=b;
 function fail(msg){throw Error(msg)}
+function packProductInvalid(k,product){return product==='card'&&['department','badgeId','badgeKind','expiry','barcode'].includes(k)}
 function png(a){
  if(!a||!Number.isInteger(a.width)||!Number.isInteger(a.height)||a.width<1||a.height<1||a.width*a.height>12000000||typeof a.data!=='string'||a.data.length>MAX||!/^data:image\/png;base64,[A-Za-z0-9+/]+={0,2}$/.test(a.data))fail('Imagem PNG inválida.');
  let b;try{b=atob(a.data.slice(22,66))}catch{fail('PNG inválido.')}
@@ -13,13 +14,13 @@ function png(a){
  return {data:a.data,width:a.width,height:a.height};
 }
 export function validatePack(raw){
- if(!raw||raw.version!==1||raw.kind!=='kutuzov-template'||!/^[a-z0-9-]{1,64}$/.test(raw.id)||typeof raw.title!=='string'||!raw.title.trim()||raw.title.length>100||!['card','badge'].includes(raw.product)||!['draft','approved'].includes(raw.status)||raw.rights!=='editable')fail('Modelo inválido ou direitos não autorizados.');
+ if(!raw||typeof raw.id!=='string'||raw.version!==1||raw.kind!=='kutuzov-template'||!/^[a-z0-9-]{1,64}$/.test(raw.id)||typeof raw.title!=='string'||!raw.title.trim()||raw.title.length>100||!['card','badge'].includes(raw.product)||!['draft','approved'].includes(raw.status)||raw.rights!=='editable')fail('Modelo inválido ou direitos não autorizados.');
  const format=customFormat(raw.product,raw.width,raw.height,raw.bleed,raw.safe),g=geometry(format),sides={};let total=0,hasName=false;
  for(const side of ['front','back']){
   const q=raw.sides?.[side];if(!q||!Array.isArray(q.slots)||q.slots.length>32||!(/^[0-9a-f]{64}$/.test(q.sourceHash||'')))fail('Face inválida: '+side);
   const art=png(q.art);total+=art.data.length;if(Math.abs(art.width/art.height-g.width/g.height)>.003)fail('Proporção da arte não corresponde ao formato.');
   const slots=q.slots.map(n=>{
-   if(!n||!keys.includes(n.field)||!['text','qr','barcode','photo','logo'].includes(n.kind))fail('Campo inválido.');
+   if(!n||!keys.includes(n.field)||packProductInvalid(n.field,raw.product)||!['text','qr','barcode','photo','logo'].includes(n.kind))fail('Campo inválido.');
    const {x,y,w,h}=n;if(!finite(x,g.s,g.w-g.s)||!finite(y,g.s,g.h-g.s)||!finite(w,.1,g.w)||!finite(h,.1,g.h)||x+w>g.w-g.s+.001||y+h>g.h-g.s+.001)fail('Campo fora da margem segura: '+n.field);
    if(n.kind!=='text'&&n.field!==n.kind||n.kind==='text'&&['qr','barcode','photo','logo'].includes(n.field))fail('Tipo de campo inconsistente.');
    if(n.field==='name')hasName=true;

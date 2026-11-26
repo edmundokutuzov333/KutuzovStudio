@@ -3,3 +3,9 @@ node_modules/
 .vercel/
 .env*
 __pycache__/
+
+*.kutuzov-template
+*.psd
+*.ai
+*.eps
+*.zip

@@ -30,7 +30,7 @@ def archive(source,work):
         entries=z.infolist()
         require(len(entries)<=200 and sum(i.file_size for i in entries)<=200_000_000,'Archive limit exceeded')
         for i in entries:
-            p=PurePosixPath(i.filename)
+            p=PurePosixPath(i.filename);require(bool(i.filename) and not i.filename.startswith('/'),'Unsafe archive path')
             require(not p.is_absolute() and not any(x in ('.','..') for x in p.parts) and '\\' not in i.filename and ':' not in i.filename and '\x00' not in i.filename,'Unsafe archive path')
             require(not stat.S_ISLNK(i.external_attr>>16) and not i.flag_bits&1,'Unsupported archive entry')
             require(i.filename.casefold() not in seen,'Duplicate archive entry');seen.add(i.filename.casefold())
@@ -110,7 +110,7 @@ def svg_prepare(path,work):
         chain=[];q=n
         while q is not None:chain.append(q);q=parents.get(q)
         for q in reversed(chain):
-            style.update(q.attrib);style.update(dict(x.split(':',1) for x in q.get('style','').split(';') if ':' in x))
+            style.update(q.attrib);style.update({k.strip():v.strip() for k,v in (x.split(':',1) for x in q.get('style','').split(';') if ':' in x)})
         x,y,bw,bh=bounds[key]
         color=style.get('fill','#000000')
         if re.fullmatch(r'#[0-9a-fA-F]{3}',color):color='#'+''.join(c*2 for c in color[1:])
@@ -206,7 +206,14 @@ def render_face(path,config,work,W,H,b,safe,dpi):
                     z=pymupdf.Rect(other['bbox'][0]*p.rect.width,other['bbox'][1]*p.rect.height,other['bbox'][2]*p.rect.width,other['bbox'][3]*p.rect.height)
                     require((r&z).get_area()<.02,'PDF text overlaps another field; prepare clean master')
                 p.add_redact_annot(r,fill=False,cross_out=False)
-            if m:p.apply_redactions(images=0,graphics=0,text=0)
+            if m:
+                p.apply_redactions(images=0,graphics=0,text=0)
+                remaining=pdf_candidates(p)
+                for old in entries:
+                    if old['id'] not in m:
+                        require(any(c['text']==old['text'] and all(abs(x-y)<.002 for x,y in zip(c['bbox'],old['bbox'])) for c in remaining),'Nonselected PDF text changed; prepare clean master')
+                    else:
+                        require(not any(c['text']==old['text'] and all(abs(x-y)<.002 for x,y in zip(c['bbox'],old['bbox'])) for c in remaining),'Mapped PDF text was not removed')
             p.get_pixmap(matrix=pymupdf.Matrix(target_w/p.rect.width,target_h/p.rect.height),alpha=False).save(png)
     with Image.open(png) as im:
         require(im.width*im.height<=12_000_000,'Artwork exceeds pixel limit')

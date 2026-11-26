@@ -87,3 +87,6 @@ Public UI adapted from the actual portfolio theme, traced EK monogram and liquid
 
 ## Art direction v2
 12 original vector art systems and 60 template IDs, each with card and badge compositions. Paired face thumbnails, automatic monograms, adaptive photo/logo and code zones, original gradients and graphic motifs. Legacy snapshots remain on artVersion 1; new designs use artVersion 2. See docs/art-direction.md.
+
+## Author template import
+Local editorial compiler for ZIP / SVG / PSD / EPS / PDF-compatible AI; approved templates use a safe JSON pack with fixed artwork and editable data slots. Open templates.html for the runtime. See docs/template-import.md for limitations, licences and import procedure.

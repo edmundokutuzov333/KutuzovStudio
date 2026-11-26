@@ -156,8 +156,35 @@ jobs:
           python3 -m http.server 8000 > /tmp/studio-admin-http.log 2>&1 &
           for i in {1..20}; do curl -fsS http://localhost:8000/ >/dev/null && break; sleep 1; done
           /tmp/compat/bin/python tests/admin_browser.py
+  template-import:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Install local import engines
+        run: |
+          sudo apt-get update && sudo apt-get install -y inkscape ghostscript
+          python3 -m venv /tmp/studio-import
+          /tmp/studio-import/bin/pip install -r tools/import-requirements.txt playwright==1.51.0
+          /tmp/studio-import/bin/python -m playwright install chromium
+      - name: Verify real source formats and safe pack
+        run: |
+          mkdir -p /tmp/studio-import-proof
+          curl -fsSL https://raw.githubusercontent.com/psd-tools/psd-tools/b5637927626c7e577ffb5b8925901fc9d06c69f9/tests/psd_files/layers-minimal/type-layer.psd -o /tmp/studio-import-proof/type-layer.psd
+          /tmp/studio-import/bin/python tests/template_import_proof.py /tmp/studio-import-proof /tmp/studio-import-proof/type-layer.psd
+          node --input-type=module -e "import {parsePack} from './src/template-runtime.mjs';import {readFileSync} from 'node:fs';parsePack(readFileSync('/tmp/studio-import-proof/proof.kutuzov-template','utf8'));"
+      - name: Browser proof with generated pack
+        run: |
+          npm run build
+          python3 -m http.server 8002 --directory dist > /tmp/studio-template-http.log 2>&1 &
+          for i in {1..20}; do curl -fsS http://localhost:8002/templates.html >/dev/null && break; sleep 1; done
+          /tmp/studio-import/bin/python tests/template_import_browser.py /tmp/studio-import-proof/proof.kutuzov-template
   release-artifact:
-    needs: [application, print-proof, postgres-contract, live-catalog, browser-compatibility]
+    needs: [application, print-proof, postgres-contract, live-catalog, browser-compatibility, template-import]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
